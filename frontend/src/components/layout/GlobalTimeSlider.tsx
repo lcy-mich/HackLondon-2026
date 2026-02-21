@@ -12,10 +12,10 @@ export function GlobalTimeSlider() {
   const setGlobalSelectedSlot = useSeatStore((s) => s.setGlobalSelectedSlot);
 
   return (
-    <div className="bg-surface border-b border-muted px-4 py-3 shadow-sm">
-      <div className="max-w-5xl mx-auto flex items-center gap-4">
-        <span className="text-sm font-medium text-secondary whitespace-nowrap">
-          View time:
+    <div className="bg-surface border-b border-muted py-3">
+      <div className="max-w-5xl mx-auto px-6 flex items-center gap-4">
+        <span className="text-xs font-semibold tracking-widest uppercase text-secondary whitespace-nowrap">
+          Time
         </span>
         <input
           type="range"

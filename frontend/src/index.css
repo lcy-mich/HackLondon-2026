@@ -79,8 +79,8 @@
   --text-primary:   #000000;  /* solid black body text             */
   --text-secondary: #6B7280;  /* gray-500, readable on white       */
   --text-header:    #ffffff;  /* white on black                    */
-  --color-free:     #F3F4F6;  /* cool gray-100, not even green     */
-  --color-reserved: #E5E7EB;  /* gray-200, utilitarian darker grey */
+  --color-free:     #FFFFFF;  /* pure white — inviting, stark      */
+  --color-reserved: #111827;  /* near-black — unambiguously taken  */
   --color-accent:   #111827;  /* near-black, gray-900              */
   --border-muted:   #D1D5DB;  /* gray-300, visible but quiet       */
 }
