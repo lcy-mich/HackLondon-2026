@@ -80,7 +80,7 @@
   --text-secondary: #6B7280;  /* gray-500, readable on white       */
   --text-header:    #ffffff;  /* white on black                    */
   --color-free:     #FFFFFF;  /* pure white — inviting, stark      */
-  --color-reserved: #111827;  /* near-black — unambiguously taken  */
-  --color-accent:   #111827;  /* near-black, gray-900              */
+  --color-reserved: #334155;  /* slate-700 — deep charcoal, reads as "taken" without harshness */
+  --color-accent:   #334155;  /* slate-700                         */
   --border-muted:   #D1D5DB;  /* gray-300, visible but quiet       */
 }

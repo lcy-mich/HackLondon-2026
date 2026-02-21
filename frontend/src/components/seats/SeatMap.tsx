@@ -7,7 +7,29 @@ const ZONES = [
   { key: 'B', label: 'Zone B — Inner Tables'  },
 ] as const;
 
-export function SeatMap() {
+// ── Static tag lookup ─────────────────────────────────────────────────────
+// All A seats have 'window'; all B seats have 'quiet'.
+// 'power' and 'monitor' are spread across both zones.
+const SEAT_TAGS: Record<string, string[]> = {
+  A1: ['window', 'power'],
+  A2: ['window'],
+  A3: ['window', 'monitor'],
+  A4: ['window', 'power'],
+  A5: ['window', 'monitor'],
+  A6: ['window'],
+  B1: ['quiet', 'power'],
+  B2: ['quiet'],
+  B3: ['quiet', 'monitor'],
+  B4: ['quiet', 'power'],
+  B5: ['quiet', 'monitor'],
+  B6: ['quiet'],
+};
+
+interface SeatMapProps {
+  activeFilters: string[];
+}
+
+export function SeatMap({ activeFilters }: SeatMapProps) {
   useSeats();
 
   const { seats, selectedSeat, isLoading, error, selectSeat, currentTheme } = useSeatStore();
@@ -38,34 +60,54 @@ export function SeatMap() {
     );
   }
 
-  // ── Japanese: Architectural Floorplan ─────────────────────────────────────
-  // gap-px with a black container background creates 1px hairline dividers
-  // between cells — no double borders, no gaps, pure blueprint aesthetic.
+  // Apply tag filter: a seat is visible only if it has ALL active filter tags.
+  const visibleSeats = activeFilters.length === 0
+    ? seats
+    : seats.filter((seat) => {
+        const tags = SEAT_TAGS[seat.seatId] ?? [];
+        return activeFilters.every((f) => tags.includes(f));
+      });
+
+  // ── Japanese: Vertical Minimalist Stack ───────────────────────────────────
   if (currentTheme === 'japanese') {
     return (
-      <div className="space-y-6">
-        {ZONES.map(({ key, label }) => {
-          const zoneSeats = seats.filter((s) => s.seatId.startsWith(key));
-          return (
-            <section key={key}>
-              <div className="border-l-2 border-black pl-3 mb-2">
-                <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-black">
-                  {label}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-px bg-black border border-black">
-                {zoneSeats.map((seat) => (
-                  <SeatCard
-                    key={seat.seatId}
-                    seat={seat}
-                    isSelected={selectedSeat?.seatId === seat.seatId}
-                    onClick={() => selectSeat(seat)}
-                  />
-                ))}
-              </div>
-            </section>
-          );
-        })}
+      <div>
+        <header className="mb-10">
+          <p className="text-[10px] font-mono tracking-[0.35em] uppercase text-gray-400 mb-2">
+            University College London Library
+          </p>
+          <h2 className="text-4xl font-mono font-black tracking-tight text-black leading-none">
+            FLOOR 1
+          </h2>
+          <p className="text-xs font-mono tracking-[0.2em] uppercase text-gray-400 mt-1">
+            — Quiet Study Zone
+          </p>
+        </header>
+
+        <div className="space-y-8">
+          {ZONES.map(({ key, label }) => {
+            const zoneSeats = visibleSeats.filter((s) => s.seatId.startsWith(key));
+            return (
+              <section key={key}>
+                <div className="border-l-2 border-[#334155] pl-3 mb-2">
+                  <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-[#334155]">
+                    {label}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-px bg-[#334155] border border-[#334155]">
+                  {zoneSeats.map((seat) => (
+                    <SeatCard
+                      key={seat.seatId}
+                      seat={seat}
+                      isSelected={selectedSeat?.seatId === seat.seatId}
+                      onClick={() => selectSeat(seat)}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -74,7 +116,7 @@ export function SeatMap() {
   return (
     <div className="space-y-10">
       {ZONES.map(({ key, label }) => {
-        const zoneSeats = seats.filter((s) => s.seatId.startsWith(key));
+        const zoneSeats = visibleSeats.filter((s) => s.seatId.startsWith(key));
         return (
           <section key={key}>
             <h3 className="text-xs font-semibold tracking-widest uppercase text-secondary border-b border-muted pb-2 mb-4">

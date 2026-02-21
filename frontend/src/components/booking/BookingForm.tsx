@@ -1,6 +1,14 @@
 import { useState, type FormEvent, type ChangeEvent } from 'react';
-import type { BookingRequest, Seat, TimeSlot } from '../../types';
+import type { BookingRequest, Seat } from '../../types';
+import { useSeatStore } from '../../store/seatStore';
 import { SeatTimeline } from './SeatTimeline';
+
+/** Format a 0–48 node index as "HH:MM". Node 48 → "24:00". */
+function slotToLabel(slot: number): string {
+  const h = Math.floor(slot / 2);
+  const m = slot % 2 === 0 ? '00' : '30';
+  return `${String(h).padStart(2, '0')}:${m}`;
+}
 
 interface BookingFormProps {
   seat: Seat;
@@ -10,26 +18,28 @@ interface BookingFormProps {
 }
 
 export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingFormProps) {
+  const selectedTimeRange = useSeatStore((s) => s.selectedTimeRange);
+  const [left, right] = selectedTimeRange;
+
   const [studentId, setStudentId] = useState('');
-  const [pinCode, setPinCode] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [pinCode, setPinCode]     = useState('');
 
-  const isPinValid  = /^\d{4}$/.test(pinCode);
-  const canSubmit   = studentId.trim() !== '' && selectedSlot !== null && isPinValid && !isSubmitting;
+  const isPinValid = /^\d{4}$/.test(pinCode);
+  const canSubmit  = studentId.trim() !== '' && isPinValid && !isSubmitting;
 
-  // Strip non-digits and cap at 4 characters so the field never holds invalid data
   function handlePinChange(e: ChangeEvent<HTMLInputElement>) {
     setPinCode(e.target.value.replace(/\D/g, '').slice(0, 4));
   }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!canSubmit || !selectedSlot) return;
+    if (!canSubmit) return;
+    // Math Hack: visual node `right` is exclusive, so backend endSlot = right - 1.
     onSubmit({
       seatId:    seat.seatId,
       studentId: studentId.trim(),
-      startSlot: selectedSlot.startSlot,
-      endSlot:   selectedSlot.endSlot,
+      startSlot: left,
+      endSlot:   right - 1,
       pinCode,
     });
   }
@@ -39,12 +49,25 @@ export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingF
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      {/* Binary timeline slot picker */}
+      {/* Booking window (driven by the global dual-thumb slider) */}
+      <div>
+        <label className="block text-sm font-medium text-secondary mb-1">
+          Booking window
+        </label>
+        <p className="text-base font-bold text-accent">
+          {slotToLabel(left)} – {slotToLabel(right)}
+        </p>
+        <p className="text-xs text-secondary mt-0.5">
+          Adjust the time slider above to change your booking window.
+        </p>
+      </div>
+
+      {/* Per-seat availability timeline (read-only reference) */}
       <div>
         <label className="block text-sm font-medium text-secondary mb-2">
-          Select a time slot
+          Seat availability today
         </label>
-        <SeatTimeline seat={seat} onSlotSelected={setSelectedSlot} />
+        <SeatTimeline seat={seat} onSlotSelected={() => {}} />
       </div>
 
       {/* Student ID */}

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { useSeatStore } from '../../store/seatStore';
-import type { Seat } from '../../types';
+import type { Seat, TimeSlot } from '../../types';
 
 interface SeatCardProps {
   seat: Seat;
@@ -12,7 +12,7 @@ const freeClasses     = 'bg-free     border-muted   text-primary hover:border-pr
 const reservedClasses = 'bg-reserved border-muted   text-primary cursor-default';
 const selectedClasses = 'bg-surface  border-accent  text-primary ring-2 ring-accent cursor-pointer';
 
-/** Format a 0–48 slot index as "HH:MM". */
+/** Format a 0–48 node index as "HH:MM". Node 48 → "24:00". */
 function slotToLabel(slot: number): string {
   const h = Math.floor(slot / 2);
   const m = slot % 2 === 0 ? '00' : '30';
@@ -20,75 +20,76 @@ function slotToLabel(slot: number): string {
 }
 
 /**
- * Returns true if `slot` falls within any half-open interval [startSlot, endSlot)
- * in the seat's todayBookings.
+ * Returns true if the visual range [left, right) (right exclusive) overlaps
+ * any booking in the list.  Booking intervals are half-open [startSlot, endSlot).
+ * Overlap iff max(left, b.start) < min(right, b.end).
  */
-function isSlotBooked(bookings: Seat['todayBookings'], slot: number): boolean {
-  return bookings.some((b) => slot >= b.startSlot && slot < b.endSlot);
+function isRangeBooked(bookings: TimeSlot[], left: number, right: number): boolean {
+  return bookings.some(
+    (b) => Math.max(left, b.startSlot) < Math.min(right, b.endSlot)
+  );
 }
 
 export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
-  const globalSelectedSlot = useSeatStore((s) => s.globalSelectedSlot);
-  const currentTheme       = useSeatStore((s) => s.currentTheme);
+  const selectedTimeRange = useSeatStore((s) => s.selectedTimeRange);
+  const currentTheme      = useSeatStore((s) => s.currentTheme);
+  const [left, right] = selectedTimeRange;
 
-  const bookedAtSelectedSlot = isSlotBooked(seat.todayBookings, globalSelectedSlot);
+  const bookedInRange = isRangeBooked(seat.todayBookings, left, right);
 
-  // Reserved: find the booking that covers the current slot → show its end time.
-  const currentBooking = bookedAtSelectedSlot
+  // First booking that overlaps the selected range → show "Until HH:MM" hint.
+  const currentBooking = bookedInRange
     ? (seat.todayBookings.find(
-        (b) => globalSelectedSlot >= b.startSlot && globalSelectedSlot < b.endSlot
+        (b) => Math.max(left, b.startSlot) < Math.min(right, b.endSlot)
       ) ?? null)
     : null;
 
-  // Free: find the next upcoming booking → hint when the seat next becomes occupied.
-  const nextUpcomingSlot = !bookedAtSelectedSlot
-    ? (seat.todayBookings.find((b) => b.startSlot > globalSelectedSlot) ?? null)
+  // First booking that starts at or after the right edge → show "From HH:MM" hint.
+  const nextUpcomingSlot = !bookedInRange
+    ? (seat.todayBookings.find((b) => b.startSlot >= right) ?? null)
     : null;
 
-  // ── Japanese theme: brutally minimal architectural card ───────────────────
+  // ── Japanese theme: sophisticated vertical-stack bar card ────────────────
   if (currentTheme === 'japanese') {
     let cardClass: string;
     let cardStyle: CSSProperties | undefined;
 
     if (isSelected) {
-      // Selected: white fill, heavy inset ring to signal active state
-      cardClass = 'bg-white text-black cursor-pointer ring-2 ring-inset ring-black';
+      cardClass = 'bg-white text-black cursor-pointer ring-2 ring-inset ring-[#334155]';
       cardStyle = undefined;
-    } else if (bookedAtSelectedSlot) {
-      // Reserved: near-black fill with subtle crosshatch, white text
+    } else if (bookedInRange) {
       cardClass = 'text-white cursor-default';
       cardStyle = {
-        backgroundColor: '#111827',
+        backgroundColor: '#334155',
         backgroundImage:
-          'repeating-linear-gradient(45deg, #1f2937 0, #1f2937 1px, transparent 0, transparent 50%)',
+          'repeating-linear-gradient(45deg, #475569 0, #475569 1px, transparent 0, transparent 50%)',
         backgroundSize: '8px 8px',
       };
     } else {
-      // Free: pure white, hover tint
       cardClass = 'bg-white text-black hover:bg-gray-50 cursor-pointer transition-colors';
       cardStyle = undefined;
     }
 
     return (
       <button
-        className={`p-4 flex flex-col min-h-[5rem] w-full ${cardClass}`}
+        className={`px-6 py-4 flex flex-row items-center justify-between min-h-[4.5rem] w-full ${cardClass}`}
         style={cardStyle}
         onClick={onClick}
-        aria-label={`Seat ${seat.seatId} — ${bookedAtSelectedSlot ? 'reserved' : 'free'} at selected time`}
+        aria-label={`Seat ${seat.seatId} — ${bookedInRange ? 'reserved' : 'free'} during selected window`}
       >
-        <span className="text-2xl font-mono font-bold leading-none tracking-tight">
+        <span className="text-5xl font-mono font-black leading-none tracking-tight">
           {seat.seatId}
         </span>
 
-        <div className="mt-auto">
+        <div className="text-right">
           {currentBooking && (
-            <span className="text-[10px] font-mono uppercase tracking-widest opacity-70">
-              ✕ {slotToLabel(currentBooking.endSlot)}
+            <span className="text-sm font-mono uppercase tracking-widest opacity-70">
+              ✕ Until {slotToLabel(currentBooking.endSlot)}
             </span>
           )}
           {nextUpcomingSlot && (
-            <span className="text-[10px] font-mono uppercase tracking-widest opacity-50">
-              → {slotToLabel(nextUpcomingSlot.startSlot)}
+            <span className="text-sm font-mono uppercase tracking-widest opacity-60">
+              → From {slotToLabel(nextUpcomingSlot.startSlot)}
             </span>
           )}
         </div>
@@ -99,7 +100,7 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
   // ── Default card (academic / paper themes) ────────────────────────────────
   const colorClasses = isSelected
     ? selectedClasses
-    : bookedAtSelectedSlot
+    : bookedInRange
     ? reservedClasses
     : freeClasses;
 
@@ -107,7 +108,7 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
     <button
       className={`border-2 p-5 flex flex-col min-h-[5.5rem] ${colorClasses}`}
       onClick={onClick}
-      aria-label={`Seat ${seat.seatId} — ${bookedAtSelectedSlot ? 'reserved' : 'free'} at selected time`}
+      aria-label={`Seat ${seat.seatId} — ${bookedInRange ? 'reserved' : 'free'} during selected window`}
     >
       <span className="text-3xl font-bold tracking-tight leading-none">
         {seat.seatId}
