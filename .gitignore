@@ -1,0 +1,109 @@
+# =============================================================================
+# HackLondon-2026 Monorepo — .gitignore
+# Covers: Frontend (React/Vite), Backend (FastAPI/Python), Hardware (Arduino)
+# =============================================================================
+
+# --- Claude Code ---
+.claude/
+
+# -----------------------------------------------------------------------------
+# OS / System
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+# -----------------------------------------------------------------------------
+# IDE / Editor
+# -----------------------------------------------------------------------------
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+
+# -----------------------------------------------------------------------------
+# Frontend — React / Vite
+# -----------------------------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Vite logs
+vite.config.ts.timestamp-*
+*.timestamp-*
+
+# Environment files
+.env.local
+.env.*.local
+
+# Build / cache
+.cache/
+.parcel-cache/
+.turbo/
+
+# Test output
+coverage/
+
+
+# -----------------------------------------------------------------------------
+# Backend — Python / FastAPI
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+*.egg
+MANIFEST
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Jupyter
+.ipynb_checkpoints/
+
+
+# -----------------------------------------------------------------------------
+# Hardware — Arduino
+# -----------------------------------------------------------------------------
+# Local build artefacts produced by the Arduino IDE / arduino-cli
+**/build/
+
+# Compiled binaries
+*.hex
+*.elf
+*.bin
+*.map
+
+# Arduino IDE 2.x cache
+.arduino15/
