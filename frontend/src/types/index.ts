@@ -14,6 +14,7 @@ export interface TimeSlot {
 export interface Seat {
   seatId: string;                      // e.g. "A1", "B3"
   status: SeatStatus;                  // retained for hardware state machine
+  physicalStatus: 'empty' | 'occupied'; // live IR sensor reading
   nextBookingStartTime: string | null; // ISO 8601; earliest upcoming booking, or null
   todayBookings: TimeSlot[];           // full day schedule; drives binary timeline UI
 }

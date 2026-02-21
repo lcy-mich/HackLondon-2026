@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { User } from 'lucide-react';
 import { useSeatStore } from '../../store/seatStore';
 import type { Seat, TimeSlot } from '../../types';
 
@@ -19,10 +20,15 @@ function slotToLabel(slot: number): string {
   return `${String(h).padStart(2, '0')}:${m}`;
 }
 
+/** Current real-world slot index (0–47) based on the user's local clock. */
+function currentRealWorldSlot(): number {
+  const now = new Date();
+  return Math.floor((now.getHours() * 60 + now.getMinutes()) / 30);
+}
+
 /**
- * Returns true if the visual range [left, right) (right exclusive) overlaps
- * any booking in the list.  Booking intervals are half-open [startSlot, endSlot).
- * Overlap iff max(left, b.start) < min(right, b.end).
+ * Returns true if the visual range [left, right) overlaps any booking.
+ * Intervals are half-open; overlap iff max(left, b.start) < min(right, b.end).
  */
 function isRangeBooked(bookings: TimeSlot[], left: number, right: number): boolean {
   return bookings.some(
@@ -30,14 +36,44 @@ function isRangeBooked(bookings: TimeSlot[], left: number, right: number): boole
   );
 }
 
+/**
+ * Walk-in Phantom Booking check.
+ *
+ * If physicalStatus === "occupied", there's an unregistered person sitting now.
+ * The system treats them as holding a phantom booking:
+ *   phantomStart = currentRealWorldSlot   (inclusive)
+ *   phantomEnd   = startSlot of the next future booking | 48  (exclusive)
+ *
+ * Returns true if the user's selected range [left, right) overlaps [phantomStart, phantomEnd).
+ */
+function isPhantomBlocking(seat: Seat, left: number, right: number): boolean {
+  if (seat.physicalStatus !== 'occupied') return false;
+
+  const nowSlot     = currentRealWorldSlot();
+  const phantomStart = nowSlot;
+
+  // First booking whose startSlot is strictly after now → walk-in is forced out at that point.
+  const nextFuture = seat.todayBookings
+    .filter((b) => b.startSlot > nowSlot)
+    .sort((a, b) => a.startSlot - b.startSlot)[0];
+
+  const phantomEnd = nextFuture ? nextFuture.startSlot : 48;
+
+  return Math.max(left, phantomStart) < Math.min(right, phantomEnd);
+}
+
 export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
   const selectedTimeRange = useSeatStore((s) => s.selectedTimeRange);
   const currentTheme      = useSeatStore((s) => s.currentTheme);
   const [left, right] = selectedTimeRange;
 
-  const bookedInRange = isRangeBooked(seat.todayBookings, left, right);
+  const bookedInRange      = isRangeBooked(seat.todayBookings, left, right);
+  const phantomBlocked     = isPhantomBlocking(seat, left, right);
+  const isUnavailable      = bookedInRange || phantomBlocked;
+  // True only when the physical walk-in (not an online booking) is the sole reason.
+  const physicalOnlyBlock  = phantomBlocked && !bookedInRange;
 
-  // First booking that overlaps the selected range → show "Until HH:MM" hint.
+  // First online booking that overlaps the selected range → show "Until HH:MM" hint.
   const currentBooking = bookedInRange
     ? (seat.todayBookings.find(
         (b) => Math.max(left, b.startSlot) < Math.min(right, b.endSlot)
@@ -45,7 +81,7 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
     : null;
 
   // First booking that starts at or after the right edge → show "From HH:MM" hint.
-  const nextUpcomingSlot = !bookedInRange
+  const nextUpcomingSlot = !isUnavailable
     ? (seat.todayBookings.find((b) => b.startSlot >= right) ?? null)
     : null;
 
@@ -57,7 +93,7 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
     if (isSelected) {
       cardClass = 'bg-white text-black cursor-pointer ring-2 ring-inset ring-[#334155]';
       cardStyle = undefined;
-    } else if (bookedInRange) {
+    } else if (isUnavailable) {
       cardClass = 'text-white cursor-default';
       cardStyle = {
         backgroundColor: '#334155',
@@ -75,13 +111,21 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
         className={`px-6 py-4 flex flex-row items-center justify-between min-h-[4.5rem] w-full ${cardClass}`}
         style={cardStyle}
         onClick={onClick}
-        aria-label={`Seat ${seat.seatId} — ${bookedInRange ? 'reserved' : 'free'} during selected window`}
+        aria-label={`Seat ${seat.seatId} — ${isUnavailable ? 'unavailable' : 'free'} during selected window`}
       >
         <span className="text-5xl font-mono font-black leading-none tracking-tight">
           {seat.seatId}
         </span>
 
-        <div className="text-right">
+        <div className="flex items-center gap-3 text-right">
+          {/* Physical occupancy badge — only when a walk-in (not an online booking) is blocking */}
+          {physicalOnlyBlock && (
+            <span className="flex items-center gap-1 text-xs font-mono uppercase tracking-widest opacity-80 bg-white/10 px-2 py-0.5 rounded">
+              <User size={12} />
+              walk‑in
+            </span>
+          )}
+
           {currentBooking && (
             <span className="text-sm font-mono uppercase tracking-widest opacity-70">
               ✕ Until {slotToLabel(currentBooking.endSlot)}
@@ -100,7 +144,7 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
   // ── Default card (academic / paper themes) ────────────────────────────────
   const colorClasses = isSelected
     ? selectedClasses
-    : bookedInRange
+    : isUnavailable
     ? reservedClasses
     : freeClasses;
 
@@ -108,13 +152,19 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
     <button
       className={`border-2 p-5 flex flex-col min-h-[5.5rem] ${colorClasses}`}
       onClick={onClick}
-      aria-label={`Seat ${seat.seatId} — ${bookedInRange ? 'reserved' : 'free'} during selected window`}
+      aria-label={`Seat ${seat.seatId} — ${isUnavailable ? 'unavailable' : 'free'} during selected window`}
     >
       <span className="text-3xl font-bold tracking-tight leading-none">
         {seat.seatId}
       </span>
 
       <div className="mt-auto">
+        {physicalOnlyBlock && (
+          <span className="flex items-center gap-1 text-xs text-secondary uppercase tracking-widest">
+            <User size={10} />
+            walk‑in
+          </span>
+        )}
         {currentBooking && (
           <span className="text-xs text-secondary uppercase tracking-widest">
             Until {slotToLabel(currentBooking.endSlot)}

@@ -39,30 +39,35 @@ const seedSeats: Seat[] = [
   {
     seatId: 'A1',
     status: 'free',
-    nextBookingStartTime: null,
-    todayBookings: [],
+    physicalStatus: 'occupied',          // walk-in with no booking
+    nextBookingStartTime: slotToIso(28), // 14:00 — next booking forces them out
+    todayBookings: [{ startSlot: 28, endSlot: 32 }], // 14:00–16:00
   },
   {
     seatId: 'A2',
     status: 'reserved',
+    physicalStatus: 'empty',
     nextBookingStartTime: slotToIso(20),             // 10:00
     todayBookings: [{ startSlot: 20, endSlot: 24 }], // 10:00–12:00
   },
   {
     seatId: 'A3',
     status: 'upcoming',
+    physicalStatus: 'empty',
     nextBookingStartTime: slotToIso(19),             // 09:30
     todayBookings: [{ startSlot: 19, endSlot: 22 }], // 09:30–11:00
   },
   {
     seatId: 'A4',
     status: 'awaiting_checkin',
+    physicalStatus: 'empty',
     nextBookingStartTime: slotToIso(19),             // 09:30
     todayBookings: [{ startSlot: 19, endSlot: 23 }], // 09:30–11:30
   },
   {
     seatId: 'A5',
     status: 'occupied',
+    physicalStatus: 'occupied',          // confirmed by IR sensor
     nextBookingStartTime: slotToIso(19),             // 09:30
     todayBookings: [
       { startSlot: 19, endSlot: 24 },               // 09:30–12:00
@@ -72,24 +77,28 @@ const seedSeats: Seat[] = [
   {
     seatId: 'A6',
     status: 'free',
+    physicalStatus: 'empty',
     nextBookingStartTime: slotToIso(30),             // 15:00
     todayBookings: [{ startSlot: 30, endSlot: 34 }], // 15:00–17:00
   },
   {
     seatId: 'B1',
     status: 'free',
+    physicalStatus: 'empty',
     nextBookingStartTime: null,
     todayBookings: [],
   },
   {
     seatId: 'B2',
     status: 'free',
+    physicalStatus: 'empty',
     nextBookingStartTime: slotToIso(22),             // 11:00
     todayBookings: [{ startSlot: 22, endSlot: 25 }], // 11:00–12:30
   },
   {
     seatId: 'B3',
     status: 'reserved',
+    physicalStatus: 'empty',
     nextBookingStartTime: slotToIso(26),             // 13:00
     todayBookings: [
       { startSlot: 16, endSlot: 19 },               // 08:00–09:30
@@ -99,18 +108,21 @@ const seedSeats: Seat[] = [
   {
     seatId: 'B4',
     status: 'free',
+    physicalStatus: 'empty',
     nextBookingStartTime: null,
     todayBookings: [],
   },
   {
     seatId: 'B5',
     status: 'free',
+    physicalStatus: 'empty',
     nextBookingStartTime: slotToIso(28),             // 14:00
     todayBookings: [{ startSlot: 28, endSlot: 32 }], // 14:00–16:00
   },
   {
     seatId: 'B6',
     status: 'free',
+    physicalStatus: 'empty',
     nextBookingStartTime: null,
     todayBookings: [],
   },
