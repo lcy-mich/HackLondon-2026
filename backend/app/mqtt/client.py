@@ -38,11 +38,14 @@ def disconnect() -> None:
         print("[MQTT] Disconnected.")
 
 
-def publish_led(seat_id: str, color: str) -> None:
-    """color: 'red' | 'green' | 'off'"""
+def publish_booking_status(seat_id: str, status: str) -> None:
+    """Broadcast booking-driven seat state to hardware.
+    status: 'free' | 'reserved' | 'upcoming' | 'awaiting_checkin' | 'occupied'
+    Topic: library/seat/{seatId}/booking_status
+    """
     client = get_mqtt_client()
-    topic = f"library/seat/{seat_id}/led"
-    client.publish(topic, color)
+    topic = f"library/seat/{seat_id}/booking_status"
+    client.publish(topic, status)
 
 
 # --- Future stubs ---

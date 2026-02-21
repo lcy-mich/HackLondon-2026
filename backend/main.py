@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
 from app.mqtt.client import connect_and_loop_start, disconnect
-from app.scheduler.pool import scheduler
-from app.routers import seats, bookings
+from app.scheduler.pool import scheduler, schedule_status_broadcast
+from app.routers import seats, bookings, checkin
 
 
 @asynccontextmanager
@@ -14,6 +14,7 @@ async def lifespan(_app: FastAPI):
     await init_db()
     connect_and_loop_start()
     scheduler.start()
+    schedule_status_broadcast()
     print("[App] Startup complete.")
     yield
     # --- Shutdown ---
@@ -32,5 +33,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(seats.router, prefix="/api")
-app.include_router(bookings.router, prefix="/api")
+app.include_router(seats.router)
+app.include_router(bookings.router)
+app.include_router(checkin.router)

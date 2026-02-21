@@ -6,8 +6,9 @@ class BookingDocument(Document):
     booking_id: str
     seat_id: str
     student_id: str
-    start_time: datetime
-    end_time: datetime
+    start_slot: int
+    end_slot: int
+    pin_code_hash: str
     created_at: datetime
     status: str = "confirmed"  # "confirmed" | "pending" | "cancelled"
 
