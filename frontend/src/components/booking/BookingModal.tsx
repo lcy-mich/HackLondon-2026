@@ -25,22 +25,24 @@ export function BookingModal() {
       onClick={closeModal}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative"
+        className="bg-surface rounded-2xl shadow-2xl w-full max-w-4xl mx-4 p-6 relative"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={closeModal}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 text-secondary hover:text-primary transition-colors"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-lg font-bold text-gray-800 mb-1">Book Seat {selectedSeat.seatId}</h2>
-        <p className="text-sm text-gray-500 mb-5">Fill in your details to reserve this seat.</p>
+        <h2 className="text-lg font-bold text-primary mb-1">Book Seat {selectedSeat.seatId}</h2>
+        <p className="text-sm text-secondary mb-5">
+          Click a start slot, then an end slot on the timeline below, then confirm your details.
+        </p>
 
         <BookingForm
-          seatId={selectedSeat.seatId}
+          seat={selectedSeat}
           isSubmitting={isSubmitting}
           onSubmit={submitBooking}
           onCancel={closeModal}
