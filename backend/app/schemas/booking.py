@@ -27,3 +27,20 @@ class BookingOut(BaseModel):
     end_slot: int
     created_at: str
     status: str
+
+
+class StudentBookingOut(BaseModel):
+    """Returned by GET /bookings/student/{studentId} — no pinCode, no createdAt."""
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+    booking_id: str
+    seat_id: str
+    start_slot: int
+    end_slot: int
+    status: str
+
+
+class CancelBookingRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+    booking_id: str
+    student_id: str
+    pin_code: str

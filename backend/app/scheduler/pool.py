@@ -132,6 +132,15 @@ async def _expire_booking(booking_id: str, seat_id: str) -> None:
     publish_booking_status(seat_id, "free")
 
 
+def cancel_booking_jobs(booking_id: str) -> None:
+    """Remove all scheduler jobs for a booking (called on manual cancellation)."""
+    for prefix in ("upcoming", "activate", "checkin_timeout", "expire"):
+        try:
+            scheduler.remove_job(f"{prefix}_{booking_id}")
+        except Exception:
+            pass
+
+
 def schedule_status_broadcast() -> None:
     """Every 30 s: publish all seat statuses to MQTT for hardware subscribers."""
     scheduler.add_job(

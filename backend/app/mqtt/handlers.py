@@ -25,17 +25,19 @@ def on_connect(client: mqtt.Client, userdata, flags, reason_code, properties) ->
 def on_message(client: mqtt.Client, userdata, msg: mqtt.MQTTMessage) -> None:
     topic: str = msg.topic
     payload: str = msg.payload.decode("utf-8").strip()
-    loop = asyncio.get_event_loop()
+    # userdata holds the asyncio event loop captured at startup.
+    # run_coroutine_threadsafe is required because this callback runs in paho's thread.
+    loop: asyncio.AbstractEventLoop = userdata
 
     if topic.startswith(TOPIC_PREFIX) and topic.endswith(SUFFIX_CHECKIN):
         seat_id = topic[len(TOPIC_PREFIX):-len(SUFFIX_CHECKIN)]
         print(f"[MQTT] Check-in request: seat={seat_id}")
-        loop.create_task(_handle_checkin_message(seat_id, payload))
+        asyncio.run_coroutine_threadsafe(_handle_checkin_message(seat_id, payload), loop)
 
     elif topic.startswith(TOPIC_PREFIX) and topic.endswith(SUFFIX_IR):
         seat_id = topic[len(TOPIC_PREFIX):-len(SUFFIX_IR)]
         print(f"[MQTT] IR sensor update: seat={seat_id} payload={payload}")
-        loop.create_task(_handle_ir_update(seat_id, payload))
+        asyncio.run_coroutine_threadsafe(_handle_ir_update(seat_id, payload), loop)
 
 
 async def _handle_checkin_message(seat_id: str, pin_code: str) -> None:
@@ -82,6 +84,6 @@ async def _handle_ir_update(seat_id: str, payload: str) -> None:
         print(f"[MQTT] IR: unknown seat {seat_id}")
         return
 
-    seat.physical_status = "occupied" if payload == "occupied" else "empty"
+    seat.physical_status = "occupied" if payload == "occupied" else "free"
     await seat.save()
     print(f"[MQTT] Seat {seat_id} physical_status → {seat.physical_status}")

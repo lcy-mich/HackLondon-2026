@@ -16,7 +16,7 @@ class SeatDocument(Document):
     next_booking_start_time: Optional[datetime] = None
     today_bookings: List[TimeSlotEmbed] = []
     # Hardware-detected physical occupancy (IR sensor)
-    physical_status: str = "empty"  # "empty" | "occupied"
+    physical_status: str = "free"  # "free" | "occupied"
 
     class Settings:
         name = "seats"
