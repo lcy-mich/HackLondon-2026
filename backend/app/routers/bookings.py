@@ -137,7 +137,7 @@ async def create_booking(req: BookingRequest):
 
 @router.get("/bookings")
 async def get_bookings():
-    bookings = await BookingDocument.find_all().to_list()
+    bookings = await BookingDocument.find(BookingDocument.status == "confirmed").to_list()
     return ApiResponse(
         success=True,
         message="Bookings fetched successfully",
@@ -220,9 +220,15 @@ async def cancel_booking(req: CancelBookingRequest):
         seat.next_booking_start_time = (
             slot_to_datetime(remaining_upcoming[0].start_slot) if remaining_upcoming else None
         )
-        # Free the seat if no future bookings remain, or if this was the currently-active booking
-        if not remaining_future or (is_active and seat.status in ("awaiting_checkin", "occupied")):
+        # Determine the correct post-cancel seat status
+        if not remaining_future:
             seat.status = "free"
+        elif is_active and seat.status in ("awaiting_checkin", "occupied"):
+            seat.status = "free"
+        elif seat.status == "upcoming" and booking.start_slot > now_slot:
+            # The upcoming window was triggered by this booking; revert to reserved
+            # (the next booking's upcoming job will re-fire when its time comes)
+            seat.status = "reserved" if remaining_upcoming else "free"
         await seat.save()
 
         publish_booking_status(booking.seat_id, seat.status)

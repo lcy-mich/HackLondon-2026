@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     hivemq_username: str
     hivemq_password: str
 
+    cors_origins: str = "http://localhost:5173"
+
 
 @lru_cache
 def get_settings() -> Settings:

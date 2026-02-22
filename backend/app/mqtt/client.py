@@ -50,9 +50,12 @@ def publish_booking_status(seat_id: str, status: str) -> None:
     status: 'free' | 'reserved' | 'upcoming' | 'awaiting_checkin' | 'occupied'
     Topic: library/seat/{seatId}/booking_status
     """
-    client = get_mqtt_client()
-    topic = f"library/seat/{seat_id}/booking_status"
-    client.publish(topic, status)
+    try:
+        client = get_mqtt_client()
+        topic = f"library/seat/{seat_id}/booking_status"
+        client.publish(topic, status)
+    except Exception as e:
+        print(f"[MQTT] Failed to publish booking_status for seat {seat_id}: {e}")
 
 
 # --- Future stubs ---

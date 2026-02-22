@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic.alias_generators import to_camel
 from app.models.seat import SeatDocument
 from app.models.booking import BookingDocument
@@ -15,6 +15,13 @@ router = APIRouter()
 class CheckinRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
     pin_code: str
+
+    @field_validator("pin_code")
+    @classmethod
+    def pin_must_be_4_digits(cls, v: str) -> str:
+        if not (len(v) == 4 and v.isdigit()):
+            raise ValueError("pinCode must be exactly 4 decimal digits")
+        return v
 
 
 @router.post("/seats/{seat_id}/checkin")
