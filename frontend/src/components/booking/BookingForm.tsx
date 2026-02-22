@@ -19,7 +19,9 @@ interface BookingFormProps {
 
 export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingFormProps) {
   const selectedTimeRange = useSeatStore((s) => s.selectedTimeRange);
+  const currentTheme      = useSeatStore((s) => s.currentTheme);
   const [left, right] = selectedTimeRange;
+  const isAcademic = currentTheme === 'academic';
 
   const [studentId, setStudentId] = useState('');
   const [pinCode, setPinCode]     = useState('');
@@ -47,14 +49,18 @@ export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingF
   const pinTouched   = pinCode.length > 0;
   const pinIsInvalid = pinTouched && !isPinValid;
 
+  // Per-theme style shortcuts
+  const labelClass = isAcademic
+    ? 'block text-xs font-bold tracking-wider uppercase text-slate-500 mb-1'
+    : 'block text-sm font-medium text-secondary mb-1';
+  const inputRadius = isAcademic ? 'rounded-xl' : 'rounded-lg';
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {/* Booking window (driven by the global dual-thumb slider) */}
       <div>
-        <label className="block text-sm font-medium text-secondary mb-1">
-          Booking window
-        </label>
-        <p className="text-base font-bold text-accent">
+        <label className={labelClass}>Booking window</label>
+        <p className={`font-bold ${isAcademic ? 'text-indigo-600 text-lg' : 'text-base text-accent'}`}>
           {slotToLabel(left)} – {slotToLabel(right)}
         </p>
         <p className="text-xs text-secondary mt-0.5">
@@ -64,7 +70,7 @@ export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingF
 
       {/* Per-seat availability timeline (read-only reference) */}
       <div>
-        <label className="block text-sm font-medium text-secondary mb-2">
+        <label className={labelClass.replace('mb-1', 'mb-2')}>
           Seat availability today
         </label>
         <SeatTimeline seat={seat} onSlotSelected={() => {}} />
@@ -72,20 +78,20 @@ export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingF
 
       {/* Student ID */}
       <div>
-        <label className="block text-sm font-medium text-secondary mb-1">Student ID</label>
+        <label className={labelClass}>Student ID</label>
         <input
           type="text"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
           placeholder="e.g. s1234567"
           disabled={isSubmitting}
-          className="w-full border border-muted rounded-lg px-3 py-2 text-sm text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
+          className={`w-full border border-muted ${inputRadius} px-3 py-2 text-sm text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50`}
         />
       </div>
 
       {/* Check-in PIN */}
       <div>
-        <label className="block text-sm font-medium text-secondary mb-1">Check-in PIN</label>
+        <label className={labelClass}>Check-in PIN</label>
         <input
           type="password"
           inputMode="numeric"
@@ -94,7 +100,7 @@ export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingF
           onChange={handlePinChange}
           placeholder="••••"
           disabled={isSubmitting}
-          className={`w-full border rounded-lg px-3 py-2 text-sm text-primary bg-surface focus:outline-none focus:ring-2 disabled:opacity-50 ${
+          className={`w-full border ${inputRadius} px-3 py-2 text-sm text-primary bg-surface focus:outline-none focus:ring-2 disabled:opacity-50 ${
             pinIsInvalid
               ? 'border-reserved focus:ring-reserved'
               : 'border-muted focus:ring-accent'
@@ -114,7 +120,11 @@ export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingF
         <button
           type="submit"
           disabled={!canSubmit}
-          className="flex-1 bg-accent text-header-fg rounded-lg py-2 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className={`flex-1 ${inputRadius} py-2 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+            isAcademic
+              ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              : 'bg-accent text-header-fg'
+          }`}
         >
           {isSubmitting ? 'Booking…' : 'Confirm Booking'}
         </button>
@@ -122,7 +132,9 @@ export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingF
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="flex-1 bg-surface border border-muted text-secondary rounded-lg py-2 text-sm font-semibold hover:bg-main disabled:opacity-50 transition-colors"
+          className={`flex-1 bg-surface border border-muted ${inputRadius} py-2 text-sm font-semibold hover:bg-main disabled:opacity-50 transition-colors ${
+            isAcademic ? 'text-slate-600' : 'text-secondary'
+          }`}
         >
           Cancel
         </button>

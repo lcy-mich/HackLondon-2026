@@ -37,20 +37,20 @@
   --border-muted:   #e2e8f0;
 }
 
-/* ── Academic ─ institutional, calm, professional ───────────────────────────
-   Deep slate header replaces saturated blue-700.
-   Status colours are extremely pale — present but not loud.                 */
+/* ── Academic ─ modern campus OS / high-efficiency SaaS dashboard ──────────
+   Indigo-600 accent replaces generic blue-500.
+   bg-main is a crisper slate-50 for the data-dense layout.                 */
 [data-theme='academic'] {
-  --bg-main:        #F4F5F7;  /* very cool grey                    */
-  --bg-surface:     #FFFFFF;  /* white — solid, no transparency    */
-  --bg-header:      #1E293B;  /* slate-800, deep & professional    */
-  --text-primary:   #1e293b;  /* slate-800                         */
-  --text-secondary: #64748b;  /* slate-500                         */
-  --text-header:    #ffffff;  /* white on dark slate               */
-  --color-free:     #EBF4F1;  /* extremely pale sage green         */
-  --color-reserved: #FCE8E8;  /* very pale dusty rose              */
-  --color-accent:   #3B82F6;  /* blue-500, primary CTA             */
-  --border-muted:   #e2e8f0;  /* slate-200                         */
+  --bg-main:        #F8FAFC;  /* slate-50 — clean, data-density feel       */
+  --bg-surface:     #FFFFFF;  /* white cards, always opaque                */
+  --bg-header:      #1E293B;  /* slate-800, authoritative dark nav         */
+  --text-primary:   #0f172a;  /* slate-900 — sharper contrast              */
+  --text-secondary: #64748b;  /* slate-500                                 */
+  --text-header:    #ffffff;  /* white on slate                            */
+  --color-free:     #F0F9FF;  /* sky-50 — cool, tech-forward free tint     */
+  --color-reserved: #F1F5F9;  /* slate-100 — neutral, no warm bleed        */
+  --color-accent:   #4F46E5;  /* indigo-600, primary CTA                   */
+  --border-muted:   #e2e8f0;  /* slate-200                                 */
 }
 
 /* ── Paper ─ warm, eye-care, reading-room amber ─────────────────────────────

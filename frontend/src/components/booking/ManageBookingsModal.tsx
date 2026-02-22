@@ -19,7 +19,64 @@ interface SuccessInfo {
 
 export function ManageBookingsModal() {
   const { isManageModalOpen, closeManageModal, setSeats, currentTheme } = useSeatStore();
-  const isPaper = currentTheme === 'paper';
+  const isPaper    = currentTheme === 'paper';
+  const isAcademic = currentTheme === 'academic';
+
+  // Per-theme style tokens — resolved once so JSX stays readable.
+  const ts = {
+    modal:       isPaper    ? 'rounded-md border-2 border-stone-200 shadow-xl'
+                : isAcademic ? 'rounded-2xl border border-slate-200 shadow-2xl'
+                : 'shadow-2xl',
+    title:       isPaper    ? 'font-serif text-xl font-bold text-stone-800'
+                : isAcademic ? 'text-lg font-extrabold text-slate-900 tracking-tight'
+                : 'font-mono text-lg font-bold tracking-widest uppercase text-primary',
+    titleText:   isPaper ? 'My Bookings' : isAcademic ? 'Manage Bookings' : 'Manage Bookings',
+    searchInput: isPaper    ? 'border border-stone-300 font-serif text-stone-800 focus:border-amber-600 rounded-sm'
+                : isAcademic ? 'border border-slate-200 text-slate-800 rounded-xl focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400'
+                : 'border border-muted font-mono text-primary focus:border-primary',
+    searchBtn:   isPaper    ? 'border border-amber-700 font-serif text-amber-700 hover:bg-amber-700 hover:text-white rounded-sm'
+                : isAcademic ? 'bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 border-0'
+                : 'border border-primary font-mono text-primary hover:bg-primary hover:text-surface',
+    sectionLabel:isPaper    ? 'font-serif italic text-stone-600 text-sm'
+                : isAcademic ? 'text-xs font-bold tracking-wider uppercase text-slate-500'
+                : 'font-mono text-sm tracking-[0.35em] uppercase text-secondary',
+    successBox:  isPaper    ? 'border border-stone-300 rounded-sm bg-amber-50'
+                : isAcademic ? 'border border-emerald-200 rounded-xl bg-emerald-50'
+                : 'border border-muted',
+    successText: isPaper    ? 'font-serif italic text-stone-700'
+                : isAcademic ? 'font-medium text-emerald-700'
+                : 'font-mono text-primary',
+    timelineLabel:isAcademic ? 'text-xs font-bold tracking-wider uppercase text-slate-500'
+                : 'font-mono text-xs uppercase tracking-widest text-secondary',
+    timelineSelect:isAcademic ? 'border border-slate-200 bg-surface text-xs text-slate-700 px-2 py-1 focus:outline-none focus:border-indigo-400 rounded-lg'
+                : 'border border-muted bg-surface font-mono text-xs text-primary px-2 py-1 focus:outline-none focus:border-primary',
+    timelineTrack:isAcademic ? 'relative h-12 bg-slate-100 border border-slate-200 rounded-lg overflow-hidden'
+                : 'relative h-12 bg-gray-100 border border-muted overflow-hidden',
+    timelineBlock:(selected: boolean) =>
+      isAcademic
+        ? selected ? 'bg-indigo-700 ring-2 ring-indigo-300 ring-inset z-10 rounded-sm' : 'bg-indigo-500 hover:bg-indigo-600 rounded-sm'
+        : selected ? 'bg-slate-900 ring-2 ring-amber-400 ring-inset z-10'              : 'bg-slate-800 hover:bg-slate-600',
+    listId:      isPaper    ? 'font-serif text-stone-800'
+                : isAcademic ? 'font-extrabold text-slate-800'
+                : 'font-mono text-primary',
+    listTime:    isPaper    ? 'font-mono text-stone-500'
+                : isAcademic ? 'text-slate-500'
+                : 'font-mono text-secondary',
+    listSelected:isPaper    ? 'font-serif italic text-amber-700'
+                : isAcademic ? 'font-bold text-indigo-600 tracking-wide'
+                : 'font-mono tracking-widest uppercase text-accent',
+    listSelectedText: isPaper ? 'Select →' : isAcademic ? '● Selected' : 'Selected ›',
+    cancelLabel: isPaper    ? 'font-serif italic text-sm text-stone-600'
+                : isAcademic ? 'text-sm font-medium text-slate-600'
+                : 'font-mono text-sm tracking-[0.25em] uppercase text-secondary',
+    cancelPrefix:isPaper ? 'Cancel reservation: ' : 'Cancel: ',
+    pinInput:    isPaper    ? 'border border-stone-300 font-serif text-stone-800 focus:border-amber-600 rounded-sm'
+                : isAcademic ? 'border border-slate-200 text-slate-800 rounded-xl focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400'
+                : 'border border-muted font-mono text-primary focus:border-primary',
+    cancelBtn:   isPaper    ? 'border border-red-700 font-serif text-red-700 hover:bg-red-700 hover:text-white rounded-sm'
+                : isAcademic ? 'bg-red-600 text-white rounded-xl hover:bg-red-700 border-0 font-semibold'
+                : 'border border-red-600 font-mono text-red-600 hover:bg-red-600 hover:text-white',
+  };
 
   const [studentId,    setStudentId]    = useState('');
   const [bookings,     setBookings]     = useState<StudentBooking[] | null>(null);
@@ -153,22 +210,12 @@ export function ManageBookingsModal() {
       onClick={closeManageModal}
     >
       <div
-        className={`bg-surface w-full max-w-2xl mx-4 relative max-h-[85vh] flex flex-col ${
-          isPaper
-            ? 'rounded-md border-2 border-stone-200 shadow-xl'
-            : 'shadow-2xl'
-        }`}
+        className={`bg-surface w-full max-w-2xl mx-4 relative max-h-[85vh] flex flex-col ${ts.modal}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Modal header ──────────────────────────────────────────────── */}
         <div className="border-b border-muted px-6 py-4 flex items-center justify-between shrink-0">
-          <span
-            className={isPaper
-              ? 'font-serif text-xl font-bold text-stone-800'
-              : 'font-mono text-lg font-bold tracking-widest uppercase text-primary'}
-          >
-            {isPaper ? 'My Bookings' : 'Manage Bookings'}
-          </span>
+          <span className={ts.title}>{ts.titleText}</span>
           <button
             onClick={closeManageModal}
             className="text-secondary hover:text-primary transition-colors"
@@ -189,20 +236,12 @@ export function ManageBookingsModal() {
               onChange={(e: ChangeEvent<HTMLInputElement>) => setStudentId(e.target.value)}
               placeholder="Student ID — e.g. s1234001"
               disabled={isSearching}
-              className={`flex-1 px-3 py-2.5 text-base bg-surface focus:outline-none disabled:opacity-50 ${
-                isPaper
-                  ? 'border border-stone-300 font-serif text-stone-800 focus:border-amber-600 rounded-sm'
-                  : 'border border-muted font-mono text-primary focus:border-primary'
-              }`}
+              className={`flex-1 px-3 py-2.5 text-base bg-surface focus:outline-none disabled:opacity-50 ${ts.searchInput}`}
             />
             <button
               type="submit"
               disabled={isSearching || !studentId.trim()}
-              className={`px-5 py-2.5 text-xs font-bold tracking-[0.25em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shrink-0 ${
-                isPaper
-                  ? 'border border-amber-700 font-serif text-amber-700 hover:bg-amber-700 hover:text-white rounded-sm'
-                  : 'border border-primary font-mono text-primary hover:bg-primary hover:text-surface'
-              }`}
+              className={`px-5 py-2.5 text-xs font-bold tracking-[0.25em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shrink-0 ${ts.searchBtn}`}
             >
               <Search className="w-4 h-4" />
               {isSearching ? 'Searching…' : 'Search'}
@@ -219,11 +258,7 @@ export function ManageBookingsModal() {
 
               {/* Section label */}
               <div className="border-b border-muted pb-2">
-                <span
-                  className={isPaper
-                    ? 'font-serif italic text-stone-600 text-sm'
-                    : 'font-mono text-sm tracking-[0.35em] uppercase text-secondary'}
-                >
+                <span className={ts.sectionLabel}>
                   {bookings.length === 0
                     ? 'No active bookings'
                     : `${bookings.length} Active Booking${bookings.length !== 1 ? 's' : ''}`}
@@ -232,8 +267,8 @@ export function ManageBookingsModal() {
 
               {/* ── Step 4 success banner ──────────────────────────────── */}
               {successInfo && (
-                <div className={`px-4 py-3 ${isPaper ? 'border border-stone-300 rounded-sm bg-amber-50' : 'border border-muted'}`}>
-                  <span className={`text-sm ${isPaper ? 'font-serif italic text-stone-700' : 'font-mono text-primary'}`}>
+                <div className={`px-4 py-3 ${ts.successBox}`}>
+                  <span className={`text-sm ${ts.successText}`}>
                     ✓ Cancelled — Seat {successInfo.seatId} · {slotLabel(successInfo.startSlot)}–{slotLabel(successInfo.endSlot)}
                   </span>
                 </div>
@@ -245,15 +280,13 @@ export function ManageBookingsModal() {
                   <div>
                     {/* Filter row: label left, seat-filter dropdown right */}
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono text-xs uppercase tracking-widest text-secondary">
-                        Timeline
-                      </span>
+                      <span className={ts.timelineLabel}>Timeline</span>
                       <select
                         value={timelineFilter}
                         onChange={(e: ChangeEvent<HTMLSelectElement>) =>
                           setTimelineFilter(e.target.value)
                         }
-                        className="border border-muted bg-surface font-mono text-xs text-primary px-2 py-1 focus:outline-none focus:border-primary"
+                        className={ts.timelineSelect}
                       >
                         <option value="ALL">All Seats</option>
                         {uniqueSeatIds.map((id) => (
@@ -263,7 +296,7 @@ export function ManageBookingsModal() {
                     </div>
 
                     {/* Full-day 48-slot bar with absolute-positioned booking blocks */}
-                    <div className="relative h-12 bg-gray-100 border border-muted overflow-hidden">
+                    <div className={ts.timelineTrack}>
                       {timelineBookings.map((b) => (
                         <button
                           key={b.bookingId}
@@ -271,16 +304,12 @@ export function ManageBookingsModal() {
                             position: 'absolute',
                             left:     `${(b.startSlot / 48) * 100}%`,
                             width:    `${Math.max(((b.endSlot - b.startSlot) / 48) * 100, 3)}%`,
-                            top:      0,
-                            bottom:   0,
+                            top:      isAcademic ? 4 : 0,
+                            bottom:   isAcademic ? 4 : 0,
                           }}
                           onClick={() => selectBooking(b.bookingId)}
                           title={`SEAT ${b.seatId} — ${slotLabel(b.startSlot)}–${slotLabel(b.endSlot)}`}
-                          className={`flex items-center justify-center overflow-hidden transition-colors ${
-                            selectedId === b.bookingId
-                              ? 'bg-slate-900 ring-2 ring-amber-400 ring-inset z-10'
-                              : 'bg-slate-800 hover:bg-slate-600'
-                          }`}
+                          className={`flex items-center justify-center overflow-hidden transition-colors ${ts.timelineBlock(selectedId === b.bookingId)}`}
                         >
                           <span className="text-white font-mono font-bold text-sm px-1 truncate leading-none">
                             {b.seatId}
@@ -316,15 +345,15 @@ export function ManageBookingsModal() {
                           selectedId === b.bookingId ? 'bg-main' : 'hover:bg-main'
                         }`}
                       >
-                        <span className={`text-base font-bold w-14 shrink-0 ${isPaper ? 'font-serif text-stone-800' : 'font-mono text-primary'}`}>
+                        <span className={`text-base font-bold w-14 shrink-0 ${ts.listId}`}>
                           {b.seatId}
                         </span>
-                        <span className={`text-base ${isPaper ? 'font-mono text-stone-500' : 'font-mono text-secondary'}`}>
+                        <span className={`text-base font-mono ${ts.listTime}`}>
                           {slotLabel(b.startSlot)}–{slotLabel(b.endSlot)}
                         </span>
                         {selectedId === b.bookingId && (
-                          <span className={`ml-auto text-sm shrink-0 ${isPaper ? 'font-serif italic text-amber-700' : 'font-mono tracking-widest uppercase text-accent'}`}>
-                            {isPaper ? 'Select →' : 'Selected ›'}
+                          <span className={`ml-auto text-sm shrink-0 ${ts.listSelected}`}>
+                            {ts.listSelectedText}
                           </span>
                         )}
                       </button>
@@ -337,12 +366,8 @@ export function ManageBookingsModal() {
                       onSubmit={handleCancel}
                       className="border-t border-muted pt-4 flex flex-col gap-3"
                     >
-                      <span className={isPaper
-                        ? 'font-serif italic text-sm text-stone-600'
-                        : 'font-mono text-sm tracking-[0.25em] uppercase text-secondary'}
-                      >
-                        {isPaper ? 'Cancel reservation: ' : 'Cancel: '}
-                        Seat {selectedBooking.seatId} · {slotLabel(selectedBooking.startSlot)}–{slotLabel(selectedBooking.endSlot)}
+                      <span className={ts.cancelLabel}>
+                        {ts.cancelPrefix}Seat {selectedBooking.seatId} · {slotLabel(selectedBooking.startSlot)}–{slotLabel(selectedBooking.endSlot)}
                       </span>
 
                       <div className="flex gap-2">
@@ -356,20 +381,12 @@ export function ManageBookingsModal() {
                           }
                           placeholder="4-digit PIN"
                           disabled={isCancelling}
-                          className={`w-44 px-3 py-2.5 text-base bg-surface focus:outline-none disabled:opacity-50 ${
-                            isPaper
-                              ? 'border border-stone-300 font-serif text-stone-800 focus:border-amber-600 rounded-sm'
-                              : 'border border-muted font-mono text-primary focus:border-primary'
-                          }`}
+                          className={`w-44 px-3 py-2.5 text-base bg-surface focus:outline-none disabled:opacity-50 ${ts.pinInput}`}
                         />
                         <button
                           type="submit"
                           disabled={isCancelling || !isPinValid}
-                          className={`px-5 py-2.5 text-sm font-bold tracking-[0.25em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                            isPaper
-                              ? 'border border-red-700 font-serif text-red-700 hover:bg-red-700 hover:text-white rounded-sm'
-                              : 'border border-red-600 font-mono text-red-600 hover:bg-red-600 hover:text-white'
-                          }`}
+                          className={`px-5 py-2.5 text-sm font-bold tracking-[0.25em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${ts.cancelBtn}`}
                         >
                           {isCancelling ? 'Cancelling…' : 'Confirm Cancel'}
                         </button>

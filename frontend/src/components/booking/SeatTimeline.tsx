@@ -21,6 +21,7 @@ function currentRealWorldSlot(): number {
 
 export function SeatTimeline({ seat }: SeatTimelineProps) {
   const selectedTimeRange = useSeatStore((s) => s.selectedTimeRange);
+  const currentTheme      = useSeatStore((s) => s.currentTheme);
   const [selStart, selEnd] = selectedTimeRange; // selEnd is exclusive
 
   // Compute phantom block range for walk-in seats
@@ -35,14 +36,18 @@ export function SeatTimeline({ seat }: SeatTimelineProps) {
     phantomEnd = nextFuture ? nextFuture.startSlot : 48;
   }
 
+  const isAcademic = currentTheme === 'academic';
+
   function getSlotClasses(i: number): string {
-    // 1. Confirmed online booking → dark grey (highest priority: objective reality)
-    if (seat.todayBookings.some((b) => i >= b.startSlot && i < b.endSlot)) return 'bg-slate-700';
+    // 1. Confirmed online booking → dark (highest priority: objective reality)
+    if (seat.todayBookings.some((b) => i >= b.startSlot && i < b.endSlot))
+      return isAcademic ? 'bg-slate-600' : 'bg-slate-700';
     // 2. Walk-in phantom block → light grey
     if (seat.physicalStatus === 'occupied' && i >= phantomStart && i < phantomEnd)
-      return 'bg-gray-200';
-    // 3. Global slider selection → gold (only for truly free slots)
-    if (i >= selStart && i < selEnd) return 'bg-amber-400';
+      return isAcademic ? 'bg-slate-200' : 'bg-gray-200';
+    // 3. Global slider selection → accent colour (only for truly free slots)
+    if (i >= selStart && i < selEnd)
+      return isAcademic ? 'bg-indigo-400' : 'bg-amber-400';
     // 4. Free → white with border
     return 'bg-white border border-gray-200';
   }
@@ -64,7 +69,7 @@ export function SeatTimeline({ seat }: SeatTimelineProps) {
           Booked
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-sm bg-amber-400" />
+          <span className={`inline-block w-3 h-3 rounded-sm ${isAcademic ? 'bg-indigo-400' : 'bg-amber-400'}`} />
           Selected
         </span>
       </div>

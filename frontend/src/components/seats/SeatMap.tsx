@@ -68,6 +68,56 @@ export function SeatMap({ activeFilters }: SeatMapProps) {
         return activeFilters.every((f) => tags.includes(f));
       });
 
+  // ── Academic: Modern Campus OS Dashboard ──────────────────────────────────
+  if (currentTheme === 'academic') {
+    return (
+      <div>
+        <header className="mb-8">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs font-bold tracking-wider uppercase text-indigo-500">
+              UCL Library
+            </span>
+            <span className="text-slate-300">·</span>
+            <span className="text-xs font-medium text-slate-400">Floor 1</span>
+          </div>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight leading-none">
+            Seat Availability
+          </h2>
+          <p className="text-sm text-slate-400 mt-1">
+            Select a seat below to make a reservation for the chosen time window.
+          </p>
+        </header>
+
+        <div className="space-y-8">
+          {ZONES.map(({ key, label }) => {
+            const zoneSeats = visibleSeats.filter((s) => s.seatId.startsWith(key));
+            return (
+              <section key={key}>
+                {/* SaaS-style section divider */}
+                <div className="flex items-center gap-3 mb-4">
+                  <h3 className="text-xs font-bold tracking-wider uppercase text-slate-500 shrink-0">
+                    {label}
+                  </h3>
+                  <div className="flex-1 h-px bg-slate-200" />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  {zoneSeats.map((seat) => (
+                    <SeatCard
+                      key={seat.seatId}
+                      seat={seat}
+                      isSelected={selectedSeat?.seatId === seat.seatId}
+                      onClick={() => selectSeat(seat)}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   // ── Paper: Vintage Library Index Cards ────────────────────────────────────
   if (currentTheme === 'paper') {
     return (

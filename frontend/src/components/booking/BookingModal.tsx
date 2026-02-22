@@ -7,7 +7,8 @@ import { BookingForm } from './BookingForm';
 export function BookingModal() {
   const { selectedSeat, isBookingModalOpen, closeModal, currentTheme } = useSeatStore();
   const { submitBooking, isSubmitting } = useBooking();
-  const isPaper = currentTheme === 'paper';
+  const isPaper    = currentTheme === 'paper';
+  const isAcademic = currentTheme === 'academic';
 
   // Close on ESC key
   useEffect(() => {
@@ -27,9 +28,9 @@ export function BookingModal() {
     >
       <div
         className={`bg-surface w-full max-w-4xl mx-4 p-6 relative ${
-          isPaper
-            ? 'rounded-md border-2 border-stone-200 shadow-xl'
-            : 'rounded-2xl shadow-2xl'
+          isPaper    ? 'rounded-md border-2 border-stone-200 shadow-xl'
+          : isAcademic ? 'rounded-2xl border border-slate-200 shadow-2xl'
+          : 'rounded-2xl shadow-2xl'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -48,6 +49,18 @@ export function BookingModal() {
             </h2>
             <p className="font-serif italic text-sm text-stone-500 mb-5">
               Choose your time window on the timeline, then fill in your details below.
+            </p>
+          </>
+        ) : isAcademic ? (
+          <>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-xs font-bold tracking-wider uppercase text-indigo-500">Reservation</span>
+            </div>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mb-1">
+              Book Seat {selectedSeat.seatId}
+            </h2>
+            <p className="text-sm text-slate-500 mb-5">
+              Select your time window on the timeline, then confirm your details below.
             </p>
           </>
         ) : (

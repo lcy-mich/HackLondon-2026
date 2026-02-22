@@ -93,6 +93,74 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
         .sort((a, b) => a.startSlot - b.startSlot)[0] ?? null)
     : null;
 
+  // ── Academic theme: Modern Campus OS Dashboard Card ───────────────────────
+  if (currentTheme === 'academic') {
+    let containerClass: string;
+    if (isSelected) {
+      containerClass = 'bg-indigo-50 border border-indigo-300 ring-2 ring-indigo-500 shadow-md cursor-pointer';
+    } else if (isUnavailable) {
+      containerClass = 'bg-slate-50 border border-slate-200 cursor-default';
+    } else {
+      containerClass = 'bg-white border border-slate-200 hover:shadow-md hover:border-slate-300 cursor-pointer transition-all';
+    }
+
+    return (
+      <button
+        className={`rounded-xl p-4 flex flex-col min-h-[7rem] relative transition-all ${containerClass}`}
+        onClick={onClick}
+        aria-label={`Seat ${seat.seatId} — ${isUnavailable ? 'unavailable' : 'free'} during selected window`}
+      >
+        {/* Status badge — top-right corner chip */}
+        {isSelected && (
+          <span className="absolute top-3 right-3 px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-indigo-100 text-indigo-700 leading-none tracking-wide">
+            Selected
+          </span>
+        )}
+        {!isSelected && physicalOnlyBlock && (
+          <span className="absolute top-3 right-3 px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-700 leading-none tracking-wide">
+            In Use
+          </span>
+        )}
+        {!isSelected && bookedInRange && !physicalOnlyBlock && (
+          <span className="absolute top-3 right-3 px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-slate-200 text-slate-600 leading-none tracking-wide">
+            Reserved
+          </span>
+        )}
+
+        {/* Seat ID */}
+        <span className={`text-3xl font-extrabold tracking-tight leading-none ${
+          isUnavailable ? 'text-slate-400' : 'text-slate-800'
+        }`}>
+          {seat.seatId}
+        </span>
+
+        {/* Bottom metadata line */}
+        <div className="mt-auto pt-2">
+          {!isUnavailable && nextUpcomingSlot && (
+            <span className="text-xs font-medium text-slate-400">
+              Next: {slotToLabel(nextUpcomingSlot.startSlot)}
+            </span>
+          )}
+          {!isUnavailable && !nextUpcomingSlot && (
+            <span className="text-xs font-medium text-slate-300">
+              Available all day
+            </span>
+          )}
+          {physicalOnlyBlock && nextFutureBooking && (
+            <span className="text-xs font-medium text-slate-400">
+              Avail. from {slotToLabel(nextFutureBooking.startSlot)}
+            </span>
+          )}
+          {currentBooking && (
+            <span className="text-xs font-medium text-slate-400">
+              Until {slotToLabel(currentBooking.endSlot)}
+            </span>
+          )}
+        </div>
+      </button>
+    );
+  }
+
   // ── Paper theme: Vintage Library Index Card ───────────────────────────────
   if (currentTheme === 'paper') {
     const stampText = physicalOnlyBlock ? 'IN USE' : 'RESERVED';
