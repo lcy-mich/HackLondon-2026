@@ -1,9 +1,3 @@
-// TODO: swap to Axios calls against VITE_API_BASE_URL when backend is ready.
-// Replace each delegation below with:
-//   axios.get(`${import.meta.env.VITE_API_BASE_URL}/seats`)
-// and map the response to ApiResponse<T>.
-
-import * as mockApi from './mockApi';
 import type {
   ApiResponse,
   BookingRequest,
@@ -14,28 +8,60 @@ import type {
   StudentBooking,
 } from '../types';
 
-export function getSeats(): Promise<ApiResponse<Seat[]>> {
-  return mockApi.getSeats();
+const BASE_URL = 'http://localhost:8000';
+
+const NETWORK_ERROR = {
+  success: false,
+  message: 'Network error: Could not connect to backend',
+  data: null,
+} as const;
+
+export async function getSeats(): Promise<ApiResponse<Seat[]>> {
+  try {
+    const res = await fetch(`${BASE_URL}/seats`);
+    return await res.json();
+  } catch {
+    return NETWORK_ERROR as ApiResponse<Seat[]>;
+  }
 }
 
-export function createBooking(
+export async function createBooking(
   req: BookingRequest
 ): Promise<ApiResponse<BookingResponse>> {
-  return mockApi.createBooking(req);
+  try {
+    const res = await fetch(`${BASE_URL}/bookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    return await res.json();
+  } catch {
+    return NETWORK_ERROR as ApiResponse<BookingResponse>;
+  }
 }
 
-export function getBookings(): Promise<ApiResponse<BookingResponse[]>> {
-  return mockApi.getBookings();
-}
-
-export function getStudentBookings(
+export async function getStudentBookings(
   studentId: string
 ): Promise<ApiResponse<StudentBooking[]>> {
-  return mockApi.getStudentBookings(studentId);
+  try {
+    const res = await fetch(`${BASE_URL}/bookings/student/${studentId}`);
+    return await res.json();
+  } catch {
+    return NETWORK_ERROR as ApiResponse<StudentBooking[]>;
+  }
 }
 
-export function cancelBooking(
+export async function cancelBooking(
   req: CancelBookingRequest
 ): Promise<ApiResponse<CancelBookingResponse>> {
-  return mockApi.cancelBooking(req);
+  try {
+    const res = await fetch(`${BASE_URL}/bookings/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    return await res.json();
+  } catch {
+    return NETWORK_ERROR as ApiResponse<CancelBookingResponse>;
+  }
 }

@@ -54,7 +54,7 @@ This field is driven entirely by the **booking state machine** and scheduler. It
 
 | Value | Meaning |
 |-------|---------|
-| `empty` | IR sensor reports no person at the desk |
+| `free` | IR sensor reports no person at the desk |
 | `occupied` | IR sensor detects a person at the desk |
 
 This field is updated in real time by the hardware IR sensor via MQTT. It is **independent** of `status` — a seat can be `free` (no booking) but `physicalStatus: "occupied"` (someone sitting without a booking).
@@ -75,7 +75,7 @@ Returns all 12 seats with booking state and physical occupancy.
     {
       "seatId": "A1",
       "status": "free",
-      "physicalStatus": "empty",
+      "physicalStatus": "free",
       "nextBookingStartTime": null,
       "todayBookings": []
     },
@@ -99,7 +99,7 @@ Returns all 12 seats with booking state and physical occupancy.
 |-------|------|-------------|
 | `seatId` | `string` | Seat ID: `A1`–`A6`, `B1`–`B6` |
 | `status` | `string` | Booking state machine (see above) |
-| `physicalStatus` | `"empty"` \| `"occupied"` | Real-time hardware IR presence |
+| `physicalStatus` | `"free"` \| `"occupied"` | Real-time hardware IR presence |
 | `nextBookingStartTime` | `string (ISO 8601)` \| `null` | UTC start time of the nearest upcoming booking |
 | `todayBookings` | `{startSlot, endSlot}[]` | All confirmed bookings for today, sorted ascending |
 
