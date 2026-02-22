@@ -13,10 +13,6 @@ function currentSlot(): number {
  * Example: 21:40 → left = 44 (22:00), right = 45 (22:30).
  */
 function initialTimeRange(): [number, number] {
-  // DEBUG OVERRIDE — hardcoded start so the full slider is testable at any hour.
-  // Remove this line before demo and let the real clock logic below take over.
-  return [0, 2];
-
   const now = new Date();
   const totalMinutes = now.getHours() * 60 + now.getMinutes();
   const left  = Math.min(Math.ceil(totalMinutes / 30), 47);

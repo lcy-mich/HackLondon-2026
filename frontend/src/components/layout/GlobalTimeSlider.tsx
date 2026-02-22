@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useSeatStore } from '../../store/seatStore';
 
 const SLOTS = 48; // nodes 0–48 inclusive
@@ -16,6 +16,12 @@ function pxToSlot(clientX: number, rect: DOMRect): number {
   return Math.round(ratio * SLOTS);
 }
 
+/** Current real-world slot index (floor). Matches backend's now_slot formula. */
+function currentRealWorldSlot(): number {
+  const now = new Date();
+  return Math.floor((now.getHours() * 60 + now.getMinutes()) / 30);
+}
+
 const THUMB =
   'absolute top-1/2 -translate-y-1/2 -translate-x-1/2 ' +
   'w-[18px] h-[18px] rounded-full bg-accent border-2 border-white ' +
@@ -25,6 +31,9 @@ export function GlobalTimeSlider() {
   const selectedTimeRange    = useSeatStore((s) => s.selectedTimeRange);
   const setSelectedTimeRange = useSeatStore((s) => s.setSelectedTimeRange);
   const [left, right] = selectedTimeRange;
+
+  /** When true, the left thumb can travel all the way back to 00:00 (slot 0). */
+  const [demoUnlocked, setDemoUnlocked] = useState(false);
 
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -44,11 +53,15 @@ export function GlobalTimeSlider() {
     // Capture the rect once at drag-start; it won't move during the drag.
     const rect = trackRef.current!.getBoundingClientRect();
 
+    // Snapshot the toggle at drag-start so toggling mid-drag has no effect.
+    const unlocked = demoUnlocked;
+
     function onMove(pe: PointerEvent) {
       const v = pxToSlot(pe.clientX, rect);
       if (thumb === 'left') {
-        // Clamp: left can never reach or pass right
-        setSelectedTimeRange([Math.min(v, right - 1), right]);
+        // When locked: left thumb cannot go before the current real-world slot.
+        const minLeft = unlocked ? 0 : currentRealWorldSlot();
+        setSelectedTimeRange([Math.min(Math.max(v, minLeft), right - 1), right]);
       } else {
         // Clamp: right can never reach or pass left
         setSelectedTimeRange([left, Math.max(v, left + 1)]);
@@ -75,9 +88,23 @@ export function GlobalTimeSlider() {
           <span className="text-xs font-semibold tracking-widest uppercase text-secondary">
             Booking Window
           </span>
-          <span className="text-sm font-bold text-accent tabular-nums">
-            {slotToLabel(left)} – {slotToLabel(right)}
-          </span>
+
+          <div className="flex items-center gap-3">
+            {/* Demo time-travel toggle */}
+            <label className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={demoUnlocked}
+                onChange={(e) => setDemoUnlocked(e.target.checked)}
+                className="w-3 h-3 rounded accent-accent"
+              />
+              <span className="text-xs text-slate-400">⏱ Unlock Time</span>
+            </label>
+
+            <span className="text-sm font-bold text-accent tabular-nums">
+              {slotToLabel(left)} – {slotToLabel(right)}
+            </span>
+          </div>
         </div>
 
         {/* Track — all thumb positions are measured relative to this div */}

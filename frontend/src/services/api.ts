@@ -1,9 +1,3 @@
-// TODO: swap to Axios calls against VITE_API_BASE_URL when backend is ready.
-// Replace each delegation below with:
-//   axios.get(`${import.meta.env.VITE_API_BASE_URL}/seats`)
-// and map the response to ApiResponse<T>.
-
-import * as mockApi from './mockApi';
 import type {
   ApiResponse,
   BookingRequest,
@@ -14,28 +8,43 @@ import type {
   StudentBooking,
 } from '../types';
 
-export function getSeats(): Promise<ApiResponse<Seat[]>> {
-  return mockApi.getSeats();
+const BASE = import.meta.env.VITE_API_BASE_URL as string;
+
+export async function getSeats(): Promise<ApiResponse<Seat[]>> {
+  const res = await fetch(`${BASE}/seats`);
+  return res.json();
 }
 
-export function createBooking(
+export async function createBooking(
   req: BookingRequest
 ): Promise<ApiResponse<BookingResponse>> {
-  return mockApi.createBooking(req);
+  const res = await fetch(`${BASE}/bookings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  return res.json();
 }
 
-export function getBookings(): Promise<ApiResponse<BookingResponse[]>> {
-  return mockApi.getBookings();
+export async function getBookings(): Promise<ApiResponse<BookingResponse[]>> {
+  const res = await fetch(`${BASE}/bookings`);
+  return res.json();
 }
 
-export function getStudentBookings(
+export async function getStudentBookings(
   studentId: string
 ): Promise<ApiResponse<StudentBooking[]>> {
-  return mockApi.getStudentBookings(studentId);
+  const res = await fetch(`${BASE}/bookings/student/${encodeURIComponent(studentId)}`);
+  return res.json();
 }
 
-export function cancelBooking(
+export async function cancelBooking(
   req: CancelBookingRequest
 ): Promise<ApiResponse<CancelBookingResponse>> {
-  return mockApi.cancelBooking(req);
+  const res = await fetch(`${BASE}/bookings/cancel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  return res.json();
 }

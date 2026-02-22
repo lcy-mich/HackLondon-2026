@@ -4,6 +4,17 @@ import { useBooking } from '../../hooks/useBooking';
 import { useSeatStore } from '../../store/seatStore';
 import { BookingForm } from './BookingForm';
 
+/**
+ * Returns a fixed list of amenity features for a seat based on its zone.
+ *   A-zone (A1–A6): window-side, quieter end of the library.
+ *   B-zone (B1–B6): inner section, wired for power and dual screens.
+ */
+function getSeatFeatures(seatId: string): string[] {
+  if (seatId.startsWith('A')) return ['Window View', 'Quiet Zone'];
+  if (seatId.startsWith('B')) return ['Power Outlet (220V)', 'Dual Monitor'];
+  return [];
+}
+
 export function BookingModal() {
   const { selectedSeat, isBookingModalOpen, closeModal, currentTheme } = useSeatStore();
   const { submitBooking, isSubmitting } = useBooking();
@@ -20,6 +31,8 @@ export function BookingModal() {
   }, [isBookingModalOpen, closeModal]);
 
   if (!isBookingModalOpen || !selectedSeat) return null;
+
+  const features = getSeatFeatures(selectedSeat.seatId);
 
   return (
     <div
@@ -47,9 +60,21 @@ export function BookingModal() {
             <h2 className="font-serif text-2xl font-bold text-stone-800 mb-0.5">
               Reserve Seat {selectedSeat.seatId}
             </h2>
-            <p className="font-serif italic text-sm text-stone-500 mb-5">
+            <p className={`font-serif italic text-sm text-stone-500 ${features.length > 0 ? 'mb-2' : 'mb-5'}`}>
               Choose your time window on the timeline, then fill in your details below.
             </p>
+            {features.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {features.map((f) => (
+                  <span
+                    key={f}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            )}
           </>
         ) : isAcademic ? (
           <>
@@ -59,16 +84,40 @@ export function BookingModal() {
             <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mb-1">
               Book Seat {selectedSeat.seatId}
             </h2>
-            <p className="text-sm text-slate-500 mb-5">
+            <p className={`text-sm text-slate-500 ${features.length > 0 ? 'mb-2' : 'mb-5'}`}>
               Select your time window on the timeline, then confirm your details below.
             </p>
+            {features.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {features.map((f) => (
+                  <span
+                    key={f}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            )}
           </>
         ) : (
           <>
             <h2 className="text-lg font-bold text-primary mb-1">Book Seat {selectedSeat.seatId}</h2>
-            <p className="text-sm text-secondary mb-5">
+            <p className={`text-sm text-secondary ${features.length > 0 ? 'mb-2' : 'mb-5'}`}>
               Click a start slot, then an end slot on the timeline below, then confirm your details.
             </p>
+            {features.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {features.map((f) => (
+                  <span
+                    key={f}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            )}
           </>
         )}
 
