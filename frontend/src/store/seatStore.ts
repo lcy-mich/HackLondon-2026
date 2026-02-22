@@ -33,7 +33,7 @@ interface SeatStore {
   error: string | null;
   /** Visual slider range: [leftNode, rightNode] on the 0–48 node scale.
    *  leftNode is inclusive, rightNode is exclusive.
-   *  Backend payload: startSlot = leftNode, endSlot = rightNode - 1. */
+   *  Backend payload: startSlot = leftNode, endSlot = rightNode (both use exclusive-end convention). */
   selectedTimeRange: [number, number];
   currentTheme: Theme;
 
@@ -54,7 +54,7 @@ export const useSeatStore = create<SeatStore>((set) => ({
   selectedSeat: null,
   isBookingModalOpen: false,
   isManageModalOpen: false,
-  isLoading: false,
+  isLoading: true, // true on startup so the skeleton shows before the first fetch completes
   error: null,
   selectedTimeRange: initialTimeRange(),
   currentTheme: 'academic',

@@ -16,7 +16,8 @@ export function useSeats() {
           setSeats(res.data);
           setError(null);
         } else {
-          setError(res.message);
+          // res.message may be undefined if the response shape is unexpected
+          setError(res.message ?? 'Unexpected response from server');
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch seats');

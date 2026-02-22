@@ -41,7 +41,7 @@ export function BookingForm({ seat, isSubmitting, onSubmit, onCancel }: BookingF
       seatId:    seat.seatId,
       studentId: studentId.trim(),
       startSlot: left,
-      endSlot:   right - 1,
+      endSlot:   right,   // right is already an exclusive node (0–48); backend endSlot is exclusive
       pinCode,
     });
   }
