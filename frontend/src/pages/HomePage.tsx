@@ -52,6 +52,35 @@ function FilterSidebar({ activeFilters, onToggle }: FilterSidebarProps) {
             </label>
           ))}
         </div>
+
+        {/* Legend */}
+        <div className="border-t border-muted px-5 py-4">
+          <span className="text-[10px] font-mono font-bold tracking-[0.35em] uppercase text-secondary block mb-3">
+            Legend
+          </span>
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-block w-3.5 h-3.5 shrink-0 border border-gray-400 bg-white" />
+              <span className="text-xs font-mono tracking-wide text-primary">Empty</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className="inline-block w-3.5 h-3.5 shrink-0 bg-gray-200" />
+              <span className="text-xs font-mono tracking-wide text-primary">In Use (Walk-in)</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span
+                className="inline-block w-3.5 h-3.5 shrink-0"
+                style={{
+                  backgroundColor: '#334155',
+                  backgroundImage:
+                    'repeating-linear-gradient(45deg, #475569 0, #475569 1px, transparent 0, transparent 50%)',
+                  backgroundSize: '8px 8px',
+                }}
+              />
+              <span className="text-xs font-mono tracking-wide text-primary">Reserved</span>
+            </div>
+          </div>
+        </div>
       </div>
     </aside>
   );

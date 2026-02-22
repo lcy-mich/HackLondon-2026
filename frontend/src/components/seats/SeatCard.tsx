@@ -85,6 +85,14 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
     ? (seat.todayBookings.find((b) => b.startSlot >= right) ?? null)
     : null;
 
+  // Walk-in status: find the next future booking to estimate when seat becomes reserved.
+  const nowSlot = currentRealWorldSlot();
+  const nextFutureBooking = physicalOnlyBlock
+    ? (seat.todayBookings
+        .filter((b) => b.startSlot > nowSlot)
+        .sort((a, b) => a.startSlot - b.startSlot)[0] ?? null)
+    : null;
+
   // ── Japanese theme: sophisticated vertical-stack bar card ────────────────
   if (currentTheme === 'japanese') {
     let cardClass: string;
@@ -93,7 +101,12 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
     if (isSelected) {
       cardClass = 'bg-white text-black cursor-pointer ring-2 ring-inset ring-[#334155]';
       cardStyle = undefined;
+    } else if (physicalOnlyBlock) {
+      // Walk-in / physical occupancy — light grey, readable dark text
+      cardClass = 'bg-gray-200 text-black cursor-default';
+      cardStyle = undefined;
     } else if (isUnavailable) {
+      // Online reservation — dark crosshatch
       cardClass = 'text-white cursor-default';
       cardStyle = {
         backgroundColor: '#334155',
@@ -118,11 +131,12 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
         </span>
 
         <div className="flex items-center gap-3 text-right">
-          {/* Physical occupancy badge — only when a walk-in (not an online booking) is blocking */}
+          {/* Walk-in status text: estimated clearing time */}
           {physicalOnlyBlock && (
-            <span className="flex items-center gap-1 text-xs font-mono uppercase tracking-widest opacity-80 bg-white/10 px-2 py-0.5 rounded">
-              <User size={12} />
-              walk‑in
+            <span className="text-sm font-mono uppercase tracking-widest opacity-70">
+              {nextFutureBooking
+                ? `✕ EST. ${slotToLabel(nextFutureBooking.startSlot)}`
+                : '✕ UNTIL ?'}
             </span>
           )}
 
