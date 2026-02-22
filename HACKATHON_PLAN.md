@@ -61,15 +61,16 @@ E:\projects\HackLondon-2026\          ← monorepo root
     │   ├── components/
     │   │   ├── layout/
     │   │   │   ├── Header.tsx           # App title, nav bar
-    │   │   │   └── Layout.tsx           # Page shell (Header + main slot)
+    │   │   │   ├── GlobalTimeSlider.tsx # Time scrubber; sets globalSelectedTime in store
+    │   │   │   └── Layout.tsx           # Page shell (Header + GlobalTimeSlider + main slot)
     │   │   ├── seats/
     │   │   │   ├── SeatMap.tsx          # Grid of SeatCard components
     │   │   │   ├── SeatCard.tsx         # Single seat tile (status colours)
     │   │   │   └── SeatStatusBadge.tsx  # "Free" / "Reserved" pill
     │   │   └── booking/
     │   │       ├── BookingModal.tsx     # Modal wrapper
-    │   │       ├── BookingForm.tsx      # studentId + time range inputs
-    │   │       └── TimeSlotPicker.tsx   # start/end datetime pickers
+    │   │       ├── BookingForm.tsx      # studentId + slot inputs
+    │   │       └── SeatTimeline.tsx     # Binary Free/Booked bar + drag-to-select slot
     │   ├── hooks/
     │   │   ├── useSeats.ts              # Fetches seats + polling interval
     │   │   └── useBooking.ts            # Booking submission logic
@@ -100,33 +101,39 @@ E:\projects\HackLondon-2026\          ← monorepo root
 ```typescript
 // --- Enums ---
 
-export type SeatStatus = 'free' | 'reserved';
-// Phase 2 will extend: 'occupied' | 'timeout'
+export type SeatStatus = 'free' | 'reserved' | 'upcoming' | 'awaiting_checkin' | 'occupied';
 
 export type BookingStatus = 'confirmed' | 'pending' | 'cancelled';
 
 // --- Domain Models ---
 
+export interface TimeSlot {
+  startSlot: number; // 0–47: inclusive start (slot N = [N×30 min, (N+1)×30 min))
+  endSlot:   number; // 1–48: exclusive end; endSlot − startSlot = number of slots booked
+}
+
 export interface Seat {
   seatId: string;                      // e.g. "A1", "B3"
-  status: SeatStatus;
-  nextBookingStartTime: string | null; // ISO 8601 or null if free
+  status: SeatStatus;                  // retained for hardware state machine
+  nextBookingStartTime: string | null; // ISO 8601; earliest upcoming booking, or null
+  todayBookings: TimeSlot[];           // full day schedule; drives binary timeline UI
 }
 
 export interface BookingRequest {
   seatId: string;
   studentId: string;
-  startTime: string; // ISO 8601  e.g. "2026-02-21T14:00:00Z"
-  endTime: string;   // ISO 8601
+  startSlot: number; // 0–47: inclusive start slot
+  endSlot:   number; // 1–48: exclusive end slot; endSlot − startSlot ≥ 1 (min 30 min)
+  pinCode: string;   // Exactly 4 digits e.g. "1234"; verified by Arduino keypad
 }
 
 export interface BookingResponse {
   bookingId: string;
   seatId: string;
   studentId: string;
-  startTime: string;
-  endTime: string;
-  createdAt: string;
+  startSlot: number;
+  endSlot:   number;
+  createdAt: string; // ISO 8601 server timestamp
   status: BookingStatus;
 }
 
@@ -152,9 +159,9 @@ No actual HTTP calls are made — responses are simulated with `setTimeout`.
 | `createBooking(req)` | `POST /bookings` | Creates booking, returns `BookingResponse` |
 | `getBookings()` | `GET /bookings` | Returns `BookingResponse[]` |
 
-Seed data: 12 seats (A1–A6, B1–B6). 4 are pre-seeded as `reserved` with `nextBookingStartTime` values.
+Seed data: 12 seats (A1–A6, B1–B6). Pre-seed `todayBookings` arrays for at least 6 seats with realistic time ranges covering morning and afternoon slots so the binary timeline renders meaningfully.
 
-Booking mutation must update the in-memory seed data (mark seat as `reserved`) so polling reflects the change immediately.
+Booking mutation must append the new `{ startSlot, endSlot }` to the seat's `todayBookings` array (sorted ascending by `startSlot`) and recompute `nextBookingStartTime` via `slotToIso()` so polling reflects the change immediately.
 
 ---
 
@@ -169,6 +176,7 @@ Zustand store shape:
   isBookingModalOpen: boolean
   isLoading: boolean
   error: string | null
+  globalSelectedSlot: number         // 0–47; driven by GlobalTimeSlider; defaults to currentSlot()
 
   // Actions
   setSeats(seats: Seat[]): void
@@ -176,6 +184,7 @@ Zustand store shape:
   closeModal(): void
   setLoading(loading: boolean): void
   setError(error: string | null): void
+  setGlobalSelectedSlot(slot: number): void
 }
 ```
 
@@ -209,6 +218,9 @@ Seat colour scheme:
 - `free` → green (`bg-green-100 border-green-400 text-green-800`)
 - `reserved` → red (`bg-red-100 border-red-400 text-red-800`)
 - `selected` → blue (`bg-blue-200 border-blue-500 ring-2 ring-blue-400`)
+- `upcoming` → amber/orange (`bg-amber-100 border-amber-400 text-amber-800`)
+- `awaiting_checkin` → purple (`bg-purple-100 border-purple-400 text-purple-800`)
+- `occupied` → slate (`bg-slate-200 border-slate-500 text-slate-800`)
 
 ---
 
@@ -278,6 +290,12 @@ Seat colour scheme:
 
 - [ ] Create `src/components/layout/Header.tsx` — app title + tagline
 - [ ] Create `src/components/layout/Layout.tsx` — wraps `<Header>` + `{children}`
+- [ ] Create `src/components/layout/GlobalTimeSlider.tsx`
+  - [ ] Full-width `<input type="range">` mapping today's 00:00–23:59 to millisecond offsets
+  - [ ] Displays selected time as a human-readable label (e.g. "10:30 AM")
+  - [ ] On change: calls `store.setGlobalSelectedTime(isoString)`
+  - [ ] Defaults to current time (`new Date().toISOString()`)
+- [ ] Mount `<GlobalTimeSlider>` inside `Layout.tsx` below the Header
 - [ ] Update `src/App.tsx` to use `<Layout>`
 
 ### Step 8 — Seat Components
@@ -285,9 +303,10 @@ Seat colour scheme:
 - [ ] Create `src/components/seats/SeatStatusBadge.tsx` — pill badge for status
 - [ ] Create `src/components/seats/SeatCard.tsx`
   - [ ] Props: `seat: Seat`, `onClick: () => void`, `isSelected: boolean`
-  - [ ] Apply colour classes per status (§8)
-  - [ ] Show `seatId`, status badge, and `nextBookingStartTime` if reserved
-  - [ ] Disable click if seat is `reserved`
+  - [ ] Reads `globalSelectedTime` from the Zustand store
+  - [ ] Derives displayed status by checking whether `globalSelectedTime` falls inside any interval in `seat.todayBookings` — does NOT use `seat.status` for colour-coding
+  - [ ] Apply colour classes based on derived status (§8)
+  - [ ] Clickable for all seats; opens the Seat Timeline Modal on click
 - [ ] Create `src/components/seats/SeatMap.tsx`
   - [ ] Call `useSeats()` hook
   - [ ] Render responsive grid of `<SeatCard>` components
@@ -297,16 +316,22 @@ Seat colour scheme:
 
 ### Step 9 — Booking Components
 
-- [ ] Create `src/components/booking/TimeSlotPicker.tsx`
-  - [ ] Two `<input type="datetime-local">` fields (start, end)
-  - [ ] Validate end > start before enabling submit
+- [ ] Create `src/components/booking/SeatTimeline.tsx`
+  - [ ] Props: `seat: Seat`, `onSlotSelected: (selection: TimeSlot) => void`
+  - [ ] Renders a 48-cell horizontal binary bar (one cell = one 30-min slot): booked cells red, free cells green
+  - [ ] User clicks/drags across free cells to select a contiguous range `[startSlot, endSlot)`
+  - [ ] Selection must be ≥ 1 slot (endSlot > startSlot); clicking booked cells is a no-op
+  - [ ] Displays selected range as a human-readable label (e.g. "14:00 – 15:30")
+  - [ ] Calls `onSlotSelected({ startSlot, endSlot })` when a valid selection is committed
 - [ ] Create `src/components/booking/BookingForm.tsx`
   - [ ] Props: `seatId: string`, `onSubmit`, `onCancel`
-  - [ ] `studentId` text input, `TimeSlotPicker`, Submit + Cancel buttons
+  - [ ] Embeds `<SeatTimeline>` to capture the selected `TimeSlot`
+  - [ ] `studentId` text input, 4-digit PIN field, Submit + Cancel buttons
+  - [ ] Disable submit until `startSlot < endSlot` is satisfied and PIN is 4 digits
   - [ ] Disable form during submission
 - [ ] Create `src/components/booking/BookingModal.tsx`
   - [ ] Reads `selectedSeat` + `isBookingModalOpen` from store
-  - [ ] Renders a centred overlay modal wrapping `<BookingForm>`
+  - [ ] Renders a wide centred overlay modal wrapping `<BookingForm>`
   - [ ] ESC key / backdrop click closes modal
 
 ### Step 10 — Pages & App Assembly
@@ -328,8 +353,9 @@ Seat colour scheme:
 
 | Feature | Planned location |
 |---------|-----------------|
-| PIN code generation | New `BookingResponse.pinCode` field; show in `ConfirmationPage` |
-| Hardware check-in status | Extend `SeatStatus` with `'occupied'`; new colour in `SeatCard` |
+| PIN code (✓ Phase 2) | `pinCode` field in `BookingRequest`; user sets it in `BookingForm.tsx`; verified by Arduino |
+| Hardware check-in (✓ Phase 2) | `POST /seats/{seatId}/checkin`; transitions `awaiting_checkin` → `occupied` |
+| `upcoming` / `awaiting_checkin` states | Backend still drives these via scheduler for hardware; `SeatCard` derives its timeline status client-side from `todayBookings` + `globalSelectedTime` |
 | IR sensor occupancy | New `Seat.isPhysicallyOccupied: boolean` field |
 | Timeout logic | New `Seat.timeoutAt` field; countdown timer in `SeatCard` |
 | WebSocket / SSE | Replace polling interval in `useSeats.ts` with WS listener |

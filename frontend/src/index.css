@@ -1,3 +1,86 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Theme tokens — applied by setting data-theme on <html>.
+   Tailwind classes (bg-surface, text-primary, border-muted, …) map to these
+   variables via tailwind.config.js. Only the data-theme attribute ever changes;
+   no JS class-toggling needed.
+
+   Variables defined here:
+     --bg-main        Page background
+     --bg-surface     Card / modal background  (always 100% opaque hex)
+     --bg-header      Top navigation bar
+     --text-primary   Main body text
+     --text-secondary Muted / helper text
+     --text-header    Text on the header bar
+     --color-free     Available-slot fill
+     --color-reserved Booked-slot fill
+     --color-accent   Interactive / selected / CTA colour
+     --border-muted   Dividers and quiet borders
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Fallback defaults (no data-theme attribute set) ────────────────────────
+   Mirrors academic palette so the page looks correct before ThemeSwitcher
+   mounts and sets the attribute for the first time.                         */
+:root {
+  --bg-main:        #F4F5F7;
+  --bg-surface:     #FFFFFF;
+  --bg-header:      #1E293B;
+  --text-primary:   #1e293b;
+  --text-secondary: #64748b;
+  --text-header:    #ffffff;
+  --color-free:     #EBF4F1;
+  --color-reserved: #FCE8E8;
+  --color-accent:   #3B82F6;
+  --border-muted:   #e2e8f0;
+}
+
+/* ── Academic ─ modern campus OS / high-efficiency SaaS dashboard ──────────
+   Indigo-600 accent replaces generic blue-500.
+   bg-main is a crisper slate-50 for the data-dense layout.                 */
+[data-theme='academic'] {
+  --bg-main:        #F8FAFC;  /* slate-50 — clean, data-density feel       */
+  --bg-surface:     #FFFFFF;  /* white cards, always opaque                */
+  --bg-header:      #1E293B;  /* slate-800, authoritative dark nav         */
+  --text-primary:   #0f172a;  /* slate-900 — sharper contrast              */
+  --text-secondary: #64748b;  /* slate-500                                 */
+  --text-header:    #ffffff;  /* white on slate                            */
+  --color-free:     #F0F9FF;  /* sky-50 — cool, tech-forward free tint     */
+  --color-reserved: #F1F5F9;  /* slate-100 — neutral, no warm bleed        */
+  --color-accent:   #4F46E5;  /* indigo-600, primary CTA                   */
+  --border-muted:   #e2e8f0;  /* slate-200                                 */
+}
+
+/* ── Paper ─ warm, eye-care, reading-room amber ─────────────────────────────
+   Stone-600 header is earthy and muted.
+   Free/reserved fills are barely-there washes of colour.                    */
+[data-theme='paper'] {
+  --bg-main:        #F7F5F0;  /* warm off-white parchment          */
+  --bg-surface:     #FCFCFA;  /* barely-cream white — solid        */
+  --bg-header:      #57534E;  /* stone-600, earthy and muted       */
+  --text-primary:   #292524;  /* stone-800                         */
+  --text-secondary: #78716c;  /* stone-500                         */
+  --text-header:    #fef3c7;  /* amber-100, warm on stone          */
+  --color-free:     #F1EFE7;  /* just a hint of warm sage          */
+  --color-reserved: #F4E6E4;  /* muted terracotta wash             */
+  --color-accent:   #D97706;  /* amber-600                         */
+  --border-muted:   #e7e5e4;  /* stone-200                         */
+}
+
+/* ── Japanese ─ city-boy minimalist, stark monochrome ───────────────────────
+   Pure black header, white surfaces, greyscale-only status colours.
+   No hue anywhere — typography and spacing carry the design.                */
+[data-theme='japanese'] {
+  --bg-main:        #FFFFFF;  /* pure white page                   */
+  --bg-surface:     #FFFFFF;  /* white — solid, no transparency    */
+  --bg-header:      #000000;  /* pure black for stark contrast     */
+  --text-primary:   #000000;  /* solid black body text             */
+  --text-secondary: #6B7280;  /* gray-500, readable on white       */
+  --text-header:    #ffffff;  /* white on black                    */
+  --color-free:     #FFFFFF;  /* pure white — inviting, stark      */
+  --color-reserved: #334155;  /* slate-700 — deep charcoal, reads as "taken" without harshness */
+  --color-accent:   #334155;  /* slate-700                         */
+  --border-muted:   #D1D5DB;  /* gray-300, visible but quiet       */
+}

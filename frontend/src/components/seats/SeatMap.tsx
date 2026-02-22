@@ -2,19 +2,50 @@ import { useSeats } from '../../hooks/useSeats';
 import { useSeatStore } from '../../store/seatStore';
 import { SeatCard } from './SeatCard';
 
-export function SeatMap() {
+const ZONES = [
+  { key: 'A', label: 'Zone A — Window Tables' },
+  { key: 'B', label: 'Zone B — Inner Tables'  },
+] as const;
+
+// ── Static tag lookup ─────────────────────────────────────────────────────
+// All A seats have 'window'; all B seats have 'quiet'.
+// 'power' and 'monitor' are spread across both zones.
+const SEAT_TAGS: Record<string, string[]> = {
+  A1: ['window', 'power'],
+  A2: ['window'],
+  A3: ['window', 'monitor'],
+  A4: ['window', 'power'],
+  A5: ['window', 'monitor'],
+  A6: ['window'],
+  B1: ['quiet', 'power'],
+  B2: ['quiet'],
+  B3: ['quiet', 'monitor'],
+  B4: ['quiet', 'power'],
+  B5: ['quiet', 'monitor'],
+  B6: ['quiet'],
+};
+
+interface SeatMapProps {
+  activeFilters: string[];
+}
+
+export function SeatMap({ activeFilters }: SeatMapProps) {
   useSeats();
 
-  const { seats, selectedSeat, isLoading, error, selectSeat } = useSeatStore();
+  const { seats, selectedSeat, isLoading, error, selectSeat, currentTheme } = useSeatStore();
 
   if (isLoading && seats.length === 0) {
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-xl border-2 border-gray-200 bg-gray-100 h-24 animate-pulse"
-          />
+      <div className="space-y-10">
+        {ZONES.map(({ key }) => (
+          <section key={key}>
+            <div className="h-3 w-32 bg-muted mb-4 animate-pulse" />
+            <div className="grid grid-cols-3 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-24 bg-muted animate-pulse" />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     );
@@ -22,39 +53,184 @@ export function SeatMap() {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600 font-semibold">Failed to load seats</p>
-        <p className="text-gray-500 text-sm mt-1">{error}</p>
+      <div className="text-center py-16">
+        <p className="font-semibold text-primary">Failed to load seats</p>
+        <p className="text-secondary text-sm mt-1">{error}</p>
       </div>
     );
   }
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-700">Available Seats</h2>
-        <div className="flex gap-3 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-full bg-green-400" /> Free
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-full bg-red-400" /> Reserved
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-full bg-blue-400" /> Selected
-          </span>
+  // Apply tag filter: a seat is visible only if it has ALL active filter tags.
+  const visibleSeats = activeFilters.length === 0
+    ? seats
+    : seats.filter((seat) => {
+        const tags = SEAT_TAGS[seat.seatId] ?? [];
+        return activeFilters.every((f) => tags.includes(f));
+      });
+
+  // ── Academic: Modern Campus OS Dashboard ──────────────────────────────────
+  if (currentTheme === 'academic') {
+    return (
+      <div>
+        <header className="mb-8">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs font-bold tracking-wider uppercase text-indigo-500">
+              UCL Library
+            </span>
+            <span className="text-slate-300">·</span>
+            <span className="text-xs font-medium text-slate-400">Floor 1</span>
+          </div>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight leading-none">
+            Seat Availability
+          </h2>
+          <p className="text-sm text-slate-400 mt-1">
+            Select a seat below to make a reservation for the chosen time window.
+          </p>
+        </header>
+
+        <div className="space-y-8">
+          {ZONES.map(({ key, label }) => {
+            const zoneSeats = visibleSeats.filter((s) => s.seatId.startsWith(key));
+            return (
+              <section key={key}>
+                {/* SaaS-style section divider */}
+                <div className="flex items-center gap-3 mb-4">
+                  <h3 className="text-xs font-bold tracking-wider uppercase text-slate-500 shrink-0">
+                    {label}
+                  </h3>
+                  <div className="flex-1 h-px bg-slate-200" />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  {zoneSeats.map((seat) => (
+                    <SeatCard
+                      key={seat.seatId}
+                      seat={seat}
+                      isSelected={selectedSeat?.seatId === seat.seatId}
+                      onClick={() => selectSeat(seat)}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </div>
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-        {seats.map((seat) => (
-          <SeatCard
-            key={seat.seatId}
-            seat={seat}
-            isSelected={selectedSeat?.seatId === seat.seatId}
-            onClick={() => selectSeat(seat)}
-          />
-        ))}
+    );
+  }
+
+  // ── Paper: Vintage Library Index Cards ────────────────────────────────────
+  if (currentTheme === 'paper') {
+    return (
+      <div>
+        <header className="mb-10">
+          <p className="text-xs font-serif italic text-stone-400 mb-1 tracking-wide">
+            University College London · Main Library
+          </p>
+          <h2 className="text-3xl font-serif font-bold text-stone-800 leading-tight">
+            Reading Room, Floor I
+          </h2>
+          <p className="text-xs font-mono tracking-[0.2em] uppercase text-stone-400 mt-1">
+            Select a seat to reserve your place
+          </p>
+        </header>
+
+        <div className="space-y-10">
+          {ZONES.map(({ key, label }) => {
+            const zoneSeats = visibleSeats.filter((s) => s.seatId.startsWith(key));
+            return (
+              <section key={key}>
+                {/* Archival chapter-label header */}
+                <div className="border-y-2 border-stone-300 py-2 mb-6">
+                  <h3 className="text-sm font-serif italic text-stone-600 tracking-wide">
+                    {label}
+                  </h3>
+                </div>
+                {/* Generous gap so each card reads as a discrete physical object */}
+                <div className="grid grid-cols-3 gap-8">
+                  {zoneSeats.map((seat) => (
+                    <SeatCard
+                      key={seat.seatId}
+                      seat={seat}
+                      isSelected={selectedSeat?.seatId === seat.seatId}
+                      onClick={() => selectSeat(seat)}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </div>
+    );
+  }
+
+  // ── Japanese: Vertical Minimalist Stack ───────────────────────────────────
+  if (currentTheme === 'japanese') {
+    return (
+      <div>
+        <header className="mb-10">
+          <p className="text-[10px] font-mono tracking-[0.35em] uppercase text-gray-400 mb-2">
+            University College London Library
+          </p>
+          <h2 className="text-4xl font-mono font-black tracking-tight text-black leading-none">
+            FLOOR 1
+          </h2>
+          <p className="text-xs font-mono tracking-[0.2em] uppercase text-gray-400 mt-1">
+            — Quiet Study Zone
+          </p>
+        </header>
+
+        <div className="space-y-8">
+          {ZONES.map(({ key, label }) => {
+            const zoneSeats = visibleSeats.filter((s) => s.seatId.startsWith(key));
+            return (
+              <section key={key}>
+                <div className="border-l-2 border-[#334155] pl-3 mb-2">
+                  <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-[#334155]">
+                    {label}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-px bg-[#334155] border border-[#334155]">
+                  {zoneSeats.map((seat) => (
+                    <SeatCard
+                      key={seat.seatId}
+                      seat={seat}
+                      isSelected={selectedSeat?.seatId === seat.seatId}
+                      onClick={() => selectSeat(seat)}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Default: academic / paper ─────────────────────────────────────────────
+  return (
+    <div className="space-y-10">
+      {ZONES.map(({ key, label }) => {
+        const zoneSeats = visibleSeats.filter((s) => s.seatId.startsWith(key));
+        return (
+          <section key={key}>
+            <h3 className="text-xs font-semibold tracking-widest uppercase text-secondary border-b border-muted pb-2 mb-4">
+              {label}
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              {zoneSeats.map((seat) => (
+                <SeatCard
+                  key={seat.seatId}
+                  seat={seat}
+                  isSelected={selectedSeat?.seatId === seat.seatId}
+                  onClick={() => selectSeat(seat)}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
