@@ -1,4 +1,19 @@
-import type { ApiResponse, BookingRequest, BookingResponse, Seat, TimeSlot } from '../types';
+import type {
+  ApiResponse,
+  BookingRequest,
+  BookingResponse,
+  CancelBookingRequest,
+  CancelBookingResponse,
+  Seat,
+  StudentBooking,
+  TimeSlot,
+} from '../types';
+
+// --- Internal type: BookingResponse + stored pinCode (never returned in responses) ---
+
+interface InternalBooking extends BookingResponse {
+  pinCode: string;
+}
 
 // --- Helpers ---
 
@@ -128,9 +143,24 @@ const seedSeats: Seat[] = [
   },
 ];
 
-const bookings: BookingResponse[] = [];
+// Seed bookings — mirror the todayBookings above, each with a stored pinCode.
+// Demo student s1234001 has three bookings (A1, A2, A6) with PIN 1111.
+const bookings: InternalBooking[] = [
+  { bookingId: 'BK_SEED_001', seatId: 'A1', studentId: 's1234001', startSlot: 28, endSlot: 32, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '1111' },
+  { bookingId: 'BK_SEED_002', seatId: 'A2', studentId: 's1234001', startSlot: 20, endSlot: 24, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '1111' },
+  { bookingId: 'BK_SEED_003', seatId: 'A3', studentId: 's1234002', startSlot: 19, endSlot: 22, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '2222' },
+  { bookingId: 'BK_SEED_004', seatId: 'A4', studentId: 's1234003', startSlot: 19, endSlot: 23, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '3333' },
+  { bookingId: 'BK_SEED_005', seatId: 'A5', studentId: 's1234004', startSlot: 19, endSlot: 24, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '4444' },
+  { bookingId: 'BK_SEED_006', seatId: 'A5', studentId: 's1234005', startSlot: 28, endSlot: 32, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '5555' },
+  { bookingId: 'BK_SEED_007', seatId: 'A6', studentId: 's1234001', startSlot: 30, endSlot: 34, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '1111' },
+  { bookingId: 'BK_SEED_008', seatId: 'B2', studentId: 's1234002', startSlot: 22, endSlot: 25, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '2222' },
+  { bookingId: 'BK_SEED_009', seatId: 'B3', studentId: 's1234003', startSlot: 16, endSlot: 19, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '3333' },
+  { bookingId: 'BK_SEED_010', seatId: 'B3', studentId: 's1234006', startSlot: 26, endSlot: 30, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '6666' },
+  { bookingId: 'BK_SEED_011', seatId: 'B5', studentId: 's1234007', startSlot: 28, endSlot: 32, createdAt: new Date().toISOString(), status: 'confirmed', pinCode: '7777' },
+];
 
-let bookingCounter = 1;
+// Start dynamic IDs after the seed range
+let bookingCounter = 12;
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -188,7 +218,7 @@ export async function createBooking(
   seat.todayBookings.sort((a, b) => a.startSlot - b.startSlot);
   seat.nextBookingStartTime = computeNextBookingStartTime(seat.todayBookings);
 
-  const booking: BookingResponse = {
+  const booking: InternalBooking = {
     bookingId: `BK${String(bookingCounter++).padStart(4, '0')}`,
     seatId: req.seatId,
     studentId: req.studentId,
@@ -196,21 +226,110 @@ export async function createBooking(
     endSlot: req.endSlot,
     createdAt: new Date().toISOString(),
     status: 'confirmed',
+    pinCode: req.pinCode,
   };
   bookings.push(booking);
 
+  // Return without pinCode
+  const { pinCode: _pin, ...publicBooking } = booking;
+  void _pin;
   return {
     success: true,
     message: 'Booking created successfully',
-    data: booking,
+    data: publicBooking,
   };
 }
 
 export async function getBookings(): Promise<ApiResponse<BookingResponse[]>> {
   await delay(200);
+  // Strip pinCode before returning
   return {
     success: true,
     message: 'Bookings fetched successfully',
-    data: [...bookings],
+    data: bookings.map(({ pinCode: _pin, ...b }) => { void _pin; return b; }),
+  };
+}
+
+/** GET /bookings/student/{studentId} — returns active bookings without pinCode. */
+export async function getStudentBookings(
+  studentId: string
+): Promise<ApiResponse<StudentBooking[]>> {
+  await delay(200);
+
+  const studentBookings: StudentBooking[] = bookings
+    .filter((b) => b.studentId === studentId && b.status === 'confirmed')
+    .map(({ bookingId, seatId, startSlot, endSlot, status }) => ({
+      bookingId,
+      seatId,
+      startSlot,
+      endSlot,
+      status,
+    }));
+
+  return {
+    success: true,
+    message:
+      studentBookings.length > 0
+        ? `Found ${studentBookings.length} booking(s) for ${studentId}`
+        : `No active bookings found for ${studentId}`,
+    data: studentBookings,
+  };
+}
+
+/** POST /bookings/cancel — verifies studentId + pinCode, then frees the slot. */
+export async function cancelBooking(
+  req: CancelBookingRequest
+): Promise<ApiResponse<CancelBookingResponse>> {
+  await delay(300);
+
+  const booking = bookings.find((b) => b.bookingId === req.bookingId);
+  if (!booking) {
+    return {
+      success: false,
+      message: `Booking ${req.bookingId} not found`,
+      data: null as unknown as CancelBookingResponse,
+    };
+  }
+
+  if (booking.studentId !== req.studentId) {
+    return {
+      success: false,
+      message: 'Student ID does not match this booking',
+      data: null as unknown as CancelBookingResponse,
+    };
+  }
+
+  if (booking.pinCode !== req.pinCode) {
+    return {
+      success: false,
+      message: 'Incorrect PIN',
+      data: null as unknown as CancelBookingResponse,
+    };
+  }
+
+  if (booking.status === 'cancelled') {
+    return {
+      success: false,
+      message: 'Booking is already cancelled',
+      data: null as unknown as CancelBookingResponse,
+    };
+  }
+
+  // Mark cancelled
+  booking.status = 'cancelled';
+
+  // Remove the interval from the seat's todayBookings and recompute next start time
+  const seat = seedSeats.find((s) => s.seatId === booking.seatId);
+  if (seat) {
+    seat.todayBookings = seat.todayBookings.filter(
+      (ts) => !(ts.startSlot === booking.startSlot && ts.endSlot === booking.endSlot)
+    );
+    seat.nextBookingStartTime = computeNextBookingStartTime(seat.todayBookings);
+  }
+
+  return {
+    success: true,
+    message: `Booking ${req.bookingId} cancelled successfully`,
+    data: { bookingId: req.bookingId, status: 'cancelled' },
   };
 }

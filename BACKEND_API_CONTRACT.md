@@ -241,7 +241,107 @@ If the hardware team prefers pub/sub over HTTP, the equivalent MQTT topic is:
 
 ---
 
-## 5. Time Representation — 48-Slot Grid
+## 5. GET /bookings/student/{studentId}
+
+Fetch all active bookings for a specific student. The response **never** includes `pinCode` to prevent credential leakage — the PIN is only compared server-side during cancellation.
+
+### Path parameter
+
+| Parameter | Type | Notes |
+|-----------|------|-------|
+| `studentId` | `string` | Student identifier, e.g. `"s1234567"` |
+
+### Response `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Found 2 booking(s) for s1234567",
+  "data": [
+    {
+      "bookingId": "BK0001",
+      "seatId":    "A1",
+      "startSlot": 28,
+      "endSlot":   32,
+      "status":    "confirmed"
+    },
+    {
+      "bookingId": "BK0007",
+      "seatId":    "A6",
+      "startSlot": 30,
+      "endSlot":   34,
+      "status":    "confirmed"
+    }
+  ]
+}
+```
+
+Returns an empty array `[]` in `data` (with `success: true`) if the student has no active bookings. The `message` field reflects which case occurred.
+
+### Response item fields
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `bookingId` | `string` | Unique booking identifier |
+| `seatId` | `string` | Seat identifier |
+| `startSlot` | `integer` 0–47 | Inclusive start |
+| `endSlot` | `integer` 1–48 | Exclusive end |
+| `status` | `"confirmed"` | Only confirmed (active) bookings are returned; cancelled entries are excluded |
+
+> **Security note:** `pinCode` is **never** present in this response. The backend stores it hashed and only compares it at `POST /bookings/cancel`.
+
+---
+
+## 6. POST /bookings/cancel
+
+Cancel a specific booking. Requires the student's ID and the 4-digit PIN they set during booking to authorise the action — no separate login system is needed.
+
+### Request body
+
+```json
+{
+  "bookingId": "BK0001",
+  "studentId": "s1234567",
+  "pinCode":   "1234"
+}
+```
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `bookingId` | `string` | The booking to cancel |
+| `studentId` | `string` | Must match the `studentId` recorded for this booking |
+| `pinCode` | `string` | The 4-digit PIN the student set during `POST /bookings` |
+
+### Response `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Booking BK0001 cancelled successfully",
+  "data": {
+    "bookingId": "BK0001",
+    "status":    "cancelled"
+  }
+}
+```
+
+**Side effect:** The backend removes the booking's `{ startSlot, endSlot }` interval from the seat's `todayBookings` array and recomputes `nextBookingStartTime`, so the next `GET /seats` poll reflects the freed slot immediately.
+
+### Error responses
+
+| Scenario | HTTP | `success` | `message` example |
+|----------|------|-----------|-------------------|
+| Booking not found | `404` | `false` | `"Booking BK9999 not found"` |
+| `studentId` mismatch | `403` | `false` | `"Student ID does not match this booking"` |
+| Wrong PIN | `403` | `false` | `"Incorrect PIN"` |
+| Booking already cancelled | `409` | `false` | `"Booking is already cancelled"` |
+| Invalid body / missing fields | `422` | `false` | FastAPI default validation message |
+
+> **Security note:** Both a wrong `studentId` and a wrong PIN return HTTP 403. In a production backend, `studentId`-not-found and wrong-PIN responses should be indistinguishable to prevent booking ID enumeration. The mock implementation relaxes this for simplicity.
+
+---
+
+## 7. Time Representation — 48-Slot Grid
 
 Booking windows are expressed as **integer slot indices**, not ISO strings.
 
@@ -263,7 +363,7 @@ Slot  1 = 00:30–01:00   Slot 24 = 12:00–12:30   Slot 47 = 23:30–00:00
 
 ---
 
-## 6. CORS
+## 8. CORS
 
 The FastAPI server must allow requests from the frontend dev origin:
 
@@ -275,7 +375,7 @@ Use FastAPI's `CORSMiddleware` with `allow_origins=["http://localhost:5173"]` (o
 
 ---
 
-## 7. Environment / Base URL
+## 9. Environment / Base URL
 
 The frontend reads the API base URL from:
 
@@ -287,19 +387,29 @@ All routes above are appended to this base, e.g. `http://localhost:8000/seats`.
 
 ---
 
-## 8. Swap Guide (Frontend Side)
+## 10. Swap Guide (Frontend Side)
 
-When the backend is running, open **`frontend/src/services/api.ts`** and replace the three
+When the backend is running, open **`frontend/src/services/api.ts`** and replace the five
 mock delegations with Axios calls. No other frontend file changes are needed.
 
 ```typescript
-// Example replacement for getSeats():
+// Example replacements — swap all five delegations in api.ts:
 import axios from 'axios';
 const BASE = import.meta.env.VITE_API_BASE_URL;
 
 export async function getSeats(): Promise<ApiResponse<Seat[]>> {
   const res = await axios.get(`${BASE}/seats`);
-  return res.data; // FastAPI must return the ApiResponse envelope directly
+  return res.data;
+}
+
+export async function getStudentBookings(studentId: string): Promise<ApiResponse<StudentBooking[]>> {
+  const res = await axios.get(`${BASE}/bookings/student/${studentId}`);
+  return res.data;
+}
+
+export async function cancelBooking(req: CancelBookingRequest): Promise<ApiResponse<CancelBookingResponse>> {
+  const res = await axios.post(`${BASE}/bookings/cancel`, req);
+  return res.data;
 }
 ```
 

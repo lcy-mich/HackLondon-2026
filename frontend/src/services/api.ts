@@ -4,7 +4,15 @@
 // and map the response to ApiResponse<T>.
 
 import * as mockApi from './mockApi';
-import type { ApiResponse, BookingRequest, BookingResponse, Seat } from '../types';
+import type {
+  ApiResponse,
+  BookingRequest,
+  BookingResponse,
+  CancelBookingRequest,
+  CancelBookingResponse,
+  Seat,
+  StudentBooking,
+} from '../types';
 
 export function getSeats(): Promise<ApiResponse<Seat[]>> {
   return mockApi.getSeats();
@@ -18,4 +26,16 @@ export function createBooking(
 
 export function getBookings(): Promise<ApiResponse<BookingResponse[]>> {
   return mockApi.getBookings();
+}
+
+export function getStudentBookings(
+  studentId: string
+): Promise<ApiResponse<StudentBooking[]>> {
+  return mockApi.getStudentBookings(studentId);
+}
+
+export function cancelBooking(
+  req: CancelBookingRequest
+): Promise<ApiResponse<CancelBookingResponse>> {
+  return mockApi.cancelBooking(req);
 }

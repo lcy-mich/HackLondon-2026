@@ -32,6 +32,7 @@ interface SeatStore {
   seats: Seat[];
   selectedSeat: Seat | null;
   isBookingModalOpen: boolean;
+  isManageModalOpen: boolean;
   isLoading: boolean;
   error: string | null;
   /** Visual slider range: [leftNode, rightNode] on the 0–48 node scale.
@@ -43,6 +44,8 @@ interface SeatStore {
   setSeats: (seats: Seat[]) => void;
   selectSeat: (seat: Seat) => void;
   closeModal: () => void;
+  openManageModal: () => void;
+  closeManageModal: () => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   /** Constraints: left < right, right <= 48. */
@@ -54,6 +57,7 @@ export const useSeatStore = create<SeatStore>((set) => ({
   seats: [],
   selectedSeat: null,
   isBookingModalOpen: false,
+  isManageModalOpen: false,
   isLoading: false,
   error: null,
   selectedTimeRange: initialTimeRange(),
@@ -62,6 +66,8 @@ export const useSeatStore = create<SeatStore>((set) => ({
   setSeats: (seats) => set({ seats }),
   selectSeat: (seat) => set({ selectedSeat: seat, isBookingModalOpen: true }),
   closeModal: () => set({ isBookingModalOpen: false, selectedSeat: null }),
+  openManageModal: () => set({ isManageModalOpen: true }),
+  closeManageModal: () => set({ isManageModalOpen: false }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
   setSelectedTimeRange: (range) => {

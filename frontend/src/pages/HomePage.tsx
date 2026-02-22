@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BookingModal } from '../components/booking/BookingModal';
+import { ManageBookingsModal } from '../components/booking/ManageBookingsModal';
 import { SeatMap } from '../components/seats/SeatMap';
 
 // ── Filter sidebar ─────────────────────────────────────────────────────────
@@ -105,6 +106,7 @@ export function HomePage() {
         <FilterSidebar activeFilters={activeFilters} onToggle={toggleFilter} />
       </div>
       <BookingModal />
+      <ManageBookingsModal />
     </>
   );
 }

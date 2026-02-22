@@ -37,6 +37,30 @@ export interface BookingResponse {
   status: BookingStatus;
 }
 
+// --- Cancel booking ---
+
+/** Safe student-facing view of a booking — pinCode is deliberately excluded. */
+export interface StudentBooking {
+  bookingId: string;
+  seatId:    string;
+  startSlot: number;
+  endSlot:   number;
+  status:    BookingStatus;
+}
+
+/** Request body for POST /bookings/cancel */
+export interface CancelBookingRequest {
+  bookingId: string;
+  studentId: string;
+  pinCode:   string; // 4-digit PIN the student set during booking
+}
+
+/** Response data for POST /bookings/cancel */
+export interface CancelBookingResponse {
+  bookingId: string;
+  status:    'cancelled';
+}
+
 // --- Generic API envelope (mirrors FastAPI response shape) ---
 
 export interface ApiResponse<T> {
