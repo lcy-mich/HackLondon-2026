@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BookingModal } from '../components/booking/BookingModal';
 import { ManageBookingsModal } from '../components/booking/ManageBookingsModal';
 import { SeatMap } from '../components/seats/SeatMap';
+import { useSeatStore } from '../store/seatStore';
 
 // ── Filter sidebar ─────────────────────────────────────────────────────────
 // IDs must match the tag strings used in SeatMap's SEAT_TAGS lookup.
@@ -20,20 +21,29 @@ interface FilterSidebarProps {
 }
 
 function FilterSidebar({ activeFilters, onToggle }: FilterSidebarProps) {
+  const currentTheme = useSeatStore((s) => s.currentTheme);
+  const isPaper = currentTheme === 'paper';
+
   return (
     // sticky top offset = header (~78px) + slider (~76px) + 6px gap = 160px
     // max-h + overflow-y-auto keeps the sidebar scrollable if filters grow
     <aside className="w-64 shrink-0 sticky top-[180px] self-start max-h-[calc(100vh-180px)] overflow-y-auto">
-      <div className="bg-surface border border-muted">
+      <div className={`bg-surface ${isPaper ? 'border border-stone-300 rounded-md shadow-md' : 'border border-muted'}`}>
         {/* Sidebar header */}
-        <div className="border-b border-muted px-5 py-4">
-          <span className="text-[10px] font-mono font-bold tracking-[0.35em] uppercase text-secondary">
-            Filters
-          </span>
+        <div className={`px-5 py-4 ${isPaper ? 'border-b border-stone-200' : 'border-b border-muted'}`}>
+          {isPaper ? (
+            <span className="font-serif italic text-sm text-stone-600">
+              Filter Seats
+            </span>
+          ) : (
+            <span className="text-[10px] font-mono font-bold tracking-[0.35em] uppercase text-secondary">
+              Filters
+            </span>
+          )}
         </div>
 
         {/* Filter items */}
-        <div className="divide-y divide-muted">
+        <div className={`divide-y ${isPaper ? 'divide-stone-200' : 'divide-muted'}`}>
           {FILTERS.map(({ id, label }) => (
             <label
               key={id}
@@ -47,7 +57,7 @@ function FilterSidebar({ activeFilters, onToggle }: FilterSidebarProps) {
                 onChange={() => onToggle(id)}
                 className="accent-accent w-3.5 h-3.5 shrink-0 cursor-pointer"
               />
-              <span className="text-xs font-mono tracking-wide text-primary select-none">
+              <span className={`text-xs tracking-wide text-primary select-none ${isPaper ? 'font-serif' : 'font-mono'}`}>
                 {label}
               </span>
             </label>
@@ -55,30 +65,38 @@ function FilterSidebar({ activeFilters, onToggle }: FilterSidebarProps) {
         </div>
 
         {/* Legend */}
-        <div className="border-t border-muted px-5 py-4">
-          <span className="text-[10px] font-mono font-bold tracking-[0.35em] uppercase text-secondary block mb-3">
-            Legend
-          </span>
+        <div className={`px-5 py-4 ${isPaper ? 'border-t border-stone-200' : 'border-t border-muted'}`}>
+          {isPaper ? (
+            <span className="font-serif italic text-sm text-stone-500 block mb-3">Key</span>
+          ) : (
+            <span className="text-[10px] font-mono font-bold tracking-[0.35em] uppercase text-secondary block mb-3">
+              Legend
+            </span>
+          )}
           <div className="flex flex-col gap-2.5">
             <div className="flex items-center gap-2.5">
-              <span className="inline-block w-3.5 h-3.5 shrink-0 border border-gray-400 bg-white" />
-              <span className="text-xs font-mono tracking-wide text-primary">Empty</span>
+              <span className={`inline-block w-3.5 h-3.5 shrink-0 bg-[#FCFCFA] ${isPaper ? 'border border-stone-300 rounded-sm shadow-sm' : 'border border-gray-400'}`} />
+              <span className={`text-xs tracking-wide text-primary ${isPaper ? 'font-serif' : 'font-mono'}`}>Empty</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <span className="inline-block w-3.5 h-3.5 shrink-0 bg-gray-200" />
-              <span className="text-xs font-mono tracking-wide text-primary">In Use (Walk-in)</span>
+              <span className={`inline-block w-3.5 h-3.5 shrink-0 ${isPaper ? 'bg-[#FCFCFA] border border-stone-300 rounded-sm shadow-sm opacity-60' : 'bg-gray-300'}`} />
+              <span className={`text-xs tracking-wide text-primary ${isPaper ? 'font-serif' : 'font-mono'}`}>In Use (Walk-in)</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <span
-                className="inline-block w-3.5 h-3.5 shrink-0"
-                style={{
-                  backgroundColor: '#334155',
-                  backgroundImage:
-                    'repeating-linear-gradient(45deg, #475569 0, #475569 1px, transparent 0, transparent 50%)',
-                  backgroundSize: '8px 8px',
-                }}
-              />
-              <span className="text-xs font-mono tracking-wide text-primary">Reserved</span>
+              {isPaper ? (
+                <span className="inline-block w-3.5 h-3.5 shrink-0 bg-[#FCFCFA] border border-stone-300 rounded-sm shadow-sm opacity-40" />
+              ) : (
+                <span
+                  className="inline-block w-3.5 h-3.5 shrink-0"
+                  style={{
+                    backgroundColor: '#334155',
+                    backgroundImage:
+                      'repeating-linear-gradient(45deg, #475569 0, #475569 1px, transparent 0, transparent 50%)',
+                    backgroundSize: '8px 8px',
+                  }}
+                />
+              )}
+              <span className={`text-xs tracking-wide text-primary ${isPaper ? 'font-serif' : 'font-mono'}`}>Reserved</span>
             </div>
           </div>
         </div>

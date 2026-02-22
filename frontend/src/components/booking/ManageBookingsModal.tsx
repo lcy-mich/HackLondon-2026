@@ -18,7 +18,8 @@ interface SuccessInfo {
 }
 
 export function ManageBookingsModal() {
-  const { isManageModalOpen, closeManageModal, setSeats } = useSeatStore();
+  const { isManageModalOpen, closeManageModal, setSeats, currentTheme } = useSeatStore();
+  const isPaper = currentTheme === 'paper';
 
   const [studentId,    setStudentId]    = useState('');
   const [bookings,     setBookings]     = useState<StudentBooking[] | null>(null);
@@ -29,6 +30,7 @@ export function ManageBookingsModal() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError,  setCancelError]  = useState<string | null>(null);
   const [successInfo,  setSuccessInfo]  = useState<SuccessInfo | null>(null);
+  const [timelineFilter, setTimelineFilter] = useState<string>('ALL');
 
   // Reset all state each time the modal opens so a fresh session starts.
   useEffect(() => {
@@ -42,6 +44,7 @@ export function ManageBookingsModal() {
       setIsCancelling(false);
       setCancelError(null);
       setSuccessInfo(null);
+      setTimelineFilter('ALL');
     }
   }, [isManageModalOpen]);
 
@@ -70,6 +73,7 @@ export function ManageBookingsModal() {
     setPin('');
     setCancelError(null);
     setSuccessInfo(null);
+    setTimelineFilter('ALL');
 
     try {
       const res = await getStudentBookings(id);
@@ -131,6 +135,16 @@ export function ManageBookingsModal() {
   const selectedBooking = bookings?.find((b) => b.bookingId === selectedId) ?? null;
   const isPinValid       = /^\d{4}$/.test(pin);
 
+  // Unique seat IDs across the fetched bookings — drives the filter dropdown.
+  const uniqueSeatIds = bookings
+    ? [...new Set(bookings.map((b) => b.seatId))]
+    : [];
+
+  // Only the timeline uses this filtered view; the booking list always shows all.
+  const timelineBookings = timelineFilter === 'ALL'
+    ? (bookings ?? [])
+    : (bookings ?? []).filter((b) => b.seatId === timelineFilter);
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -139,25 +153,33 @@ export function ManageBookingsModal() {
       onClick={closeManageModal}
     >
       <div
-        className="bg-surface w-full max-w-2xl mx-4 shadow-2xl relative max-h-[90vh] flex flex-col"
+        className={`bg-surface w-full max-w-2xl mx-4 relative max-h-[85vh] flex flex-col ${
+          isPaper
+            ? 'rounded-md border-2 border-stone-200 shadow-xl'
+            : 'shadow-2xl'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Modal header ──────────────────────────────────────────────── */}
         <div className="border-b border-muted px-6 py-4 flex items-center justify-between shrink-0">
-          <span className="font-mono text-[10px] tracking-[0.35em] uppercase font-bold text-primary">
-            Manage Bookings
+          <span
+            className={isPaper
+              ? 'font-serif text-xl font-bold text-stone-800'
+              : 'font-mono text-lg font-bold tracking-widest uppercase text-primary'}
+          >
+            {isPaper ? 'My Bookings' : 'Manage Bookings'}
           </span>
           <button
             onClick={closeManageModal}
             className="text-secondary hover:text-primary transition-colors"
             aria-label="Close modal"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* ── Scrollable body ────────────────────────────────────────────── */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-6">
+        <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-5">
 
           {/* ── Step 1: Student ID search ──────────────────────────────── */}
           <form onSubmit={handleSearch} className="flex gap-2">
@@ -167,29 +189,41 @@ export function ManageBookingsModal() {
               onChange={(e: ChangeEvent<HTMLInputElement>) => setStudentId(e.target.value)}
               placeholder="Student ID — e.g. s1234001"
               disabled={isSearching}
-              className="flex-1 border border-muted px-3 py-2 text-sm font-mono text-primary bg-surface focus:outline-none focus:border-primary disabled:opacity-50"
+              className={`flex-1 px-3 py-2.5 text-base bg-surface focus:outline-none disabled:opacity-50 ${
+                isPaper
+                  ? 'border border-stone-300 font-serif text-stone-800 focus:border-amber-600 rounded-sm'
+                  : 'border border-muted font-mono text-primary focus:border-primary'
+              }`}
             />
             <button
               type="submit"
               disabled={isSearching || !studentId.trim()}
-              className="border border-primary px-4 py-2 text-[10px] font-mono font-bold tracking-[0.25em] uppercase text-primary hover:bg-primary hover:text-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
+              className={`px-5 py-2.5 text-xs font-bold tracking-[0.25em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shrink-0 ${
+                isPaper
+                  ? 'border border-amber-700 font-serif text-amber-700 hover:bg-amber-700 hover:text-white rounded-sm'
+                  : 'border border-primary font-mono text-primary hover:bg-primary hover:text-surface'
+              }`}
             >
-              <Search className="w-3 h-3" />
+              <Search className="w-4 h-4" />
               {isSearching ? 'Searching…' : 'Search'}
             </button>
           </form>
 
           {searchError && (
-            <p className="font-mono text-xs text-red-500">{searchError}</p>
+            <p className="font-mono text-sm text-red-500">{searchError}</p>
           )}
 
           {/* ── Step 2 & 3: Results + auth ─────────────────────────────── */}
           {bookings !== null && (
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4">
 
               {/* Section label */}
               <div className="border-b border-muted pb-2">
-                <span className="font-mono text-[10px] tracking-[0.35em] uppercase text-secondary">
+                <span
+                  className={isPaper
+                    ? 'font-serif italic text-stone-600 text-sm'
+                    : 'font-mono text-sm tracking-[0.35em] uppercase text-secondary'}
+                >
                   {bookings.length === 0
                     ? 'No active bookings'
                     : `${bookings.length} Active Booking${bookings.length !== 1 ? 's' : ''}`}
@@ -198,8 +232,8 @@ export function ManageBookingsModal() {
 
               {/* ── Step 4 success banner ──────────────────────────────── */}
               {successInfo && (
-                <div className="border border-muted px-4 py-2.5">
-                  <span className="font-mono text-xs text-primary">
+                <div className={`px-4 py-3 ${isPaper ? 'border border-stone-300 rounded-sm bg-amber-50' : 'border border-muted'}`}>
+                  <span className={`text-sm ${isPaper ? 'font-serif italic text-stone-700' : 'font-mono text-primary'}`}>
                     ✓ Cancelled — Seat {successInfo.seatId} · {slotLabel(successInfo.startSlot)}–{slotLabel(successInfo.endSlot)}
                   </span>
                 </div>
@@ -209,9 +243,28 @@ export function ManageBookingsModal() {
                 <>
                   {/* ── Step 2: Timeline visualisation ────────────────── */}
                   <div>
+                    {/* Filter row: label left, seat-filter dropdown right */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono text-xs uppercase tracking-widest text-secondary">
+                        Timeline
+                      </span>
+                      <select
+                        value={timelineFilter}
+                        onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                          setTimelineFilter(e.target.value)
+                        }
+                        className="border border-muted bg-surface font-mono text-xs text-primary px-2 py-1 focus:outline-none focus:border-primary"
+                      >
+                        <option value="ALL">All Seats</option>
+                        {uniqueSeatIds.map((id) => (
+                          <option key={id} value={id}>Seat {id}</option>
+                        ))}
+                      </select>
+                    </div>
+
                     {/* Full-day 48-slot bar with absolute-positioned booking blocks */}
-                    <div className="relative h-8 bg-gray-100 border border-muted overflow-hidden">
-                      {bookings.map((b) => (
+                    <div className="relative h-12 bg-gray-100 border border-muted overflow-hidden">
+                      {timelineBookings.map((b) => (
                         <button
                           key={b.bookingId}
                           style={{
@@ -229,10 +282,7 @@ export function ManageBookingsModal() {
                               : 'bg-slate-800 hover:bg-slate-600'
                           }`}
                         >
-                          <span
-                            className="text-white font-mono font-bold px-0.5 truncate leading-none"
-                            style={{ fontSize: '8px' }}
-                          >
+                          <span className="text-white font-mono font-bold text-sm px-1 truncate leading-none">
                             {b.seatId}
                           </span>
                         </button>
@@ -240,19 +290,18 @@ export function ManageBookingsModal() {
                     </div>
 
                     {/* Hour labels: every 2 hours (12 labels, matching SeatTimeline) */}
-                    <div className="flex mt-0.5">
+                    <div className="flex mt-1">
                       {Array.from({ length: 12 }, (_, i) => (
                         <div
                           key={i}
-                          className="flex-1 font-mono text-secondary text-left select-none"
-                          style={{ fontSize: '8px' }}
+                          className="flex-1 font-mono text-xs text-secondary text-left select-none"
                         >
                           {`${String(i * 2).padStart(2, '0')}:00`}
                         </div>
                       ))}
                     </div>
 
-                    <p className="font-mono text-secondary mt-2" style={{ fontSize: '10px' }}>
+                    <p className="font-mono text-xs text-secondary mt-1">
                       Click a block to select it for cancellation.
                     </p>
                   </div>
@@ -267,15 +316,15 @@ export function ManageBookingsModal() {
                           selectedId === b.bookingId ? 'bg-main' : 'hover:bg-main'
                         }`}
                       >
-                        <span className="font-mono text-xs font-bold text-primary w-12 shrink-0">
+                        <span className={`text-base font-bold w-14 shrink-0 ${isPaper ? 'font-serif text-stone-800' : 'font-mono text-primary'}`}>
                           {b.seatId}
                         </span>
-                        <span className="font-mono text-xs text-secondary">
+                        <span className={`text-base ${isPaper ? 'font-mono text-stone-500' : 'font-mono text-secondary'}`}>
                           {slotLabel(b.startSlot)}–{slotLabel(b.endSlot)}
                         </span>
                         {selectedId === b.bookingId && (
-                          <span className="ml-auto font-mono text-[10px] tracking-widest uppercase text-accent shrink-0">
-                            Selected ›
+                          <span className={`ml-auto text-sm shrink-0 ${isPaper ? 'font-serif italic text-amber-700' : 'font-mono tracking-widest uppercase text-accent'}`}>
+                            {isPaper ? 'Select →' : 'Selected ›'}
                           </span>
                         )}
                       </button>
@@ -288,8 +337,12 @@ export function ManageBookingsModal() {
                       onSubmit={handleCancel}
                       className="border-t border-muted pt-4 flex flex-col gap-3"
                     >
-                      <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-secondary">
-                        Cancel: Seat {selectedBooking.seatId} · {slotLabel(selectedBooking.startSlot)}–{slotLabel(selectedBooking.endSlot)}
+                      <span className={isPaper
+                        ? 'font-serif italic text-sm text-stone-600'
+                        : 'font-mono text-sm tracking-[0.25em] uppercase text-secondary'}
+                      >
+                        {isPaper ? 'Cancel reservation: ' : 'Cancel: '}
+                        Seat {selectedBooking.seatId} · {slotLabel(selectedBooking.startSlot)}–{slotLabel(selectedBooking.endSlot)}
                       </span>
 
                       <div className="flex gap-2">
@@ -303,19 +356,27 @@ export function ManageBookingsModal() {
                           }
                           placeholder="4-digit PIN"
                           disabled={isCancelling}
-                          className="w-36 border border-muted px-3 py-2 text-sm font-mono text-primary bg-surface focus:outline-none focus:border-primary disabled:opacity-50"
+                          className={`w-44 px-3 py-2.5 text-base bg-surface focus:outline-none disabled:opacity-50 ${
+                            isPaper
+                              ? 'border border-stone-300 font-serif text-stone-800 focus:border-amber-600 rounded-sm'
+                              : 'border border-muted font-mono text-primary focus:border-primary'
+                          }`}
                         />
                         <button
                           type="submit"
                           disabled={isCancelling || !isPinValid}
-                          className="border border-red-600 px-4 py-2 text-[10px] font-mono font-bold tracking-[0.25em] uppercase text-red-600 hover:bg-red-600 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className={`px-5 py-2.5 text-sm font-bold tracking-[0.25em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                            isPaper
+                              ? 'border border-red-700 font-serif text-red-700 hover:bg-red-700 hover:text-white rounded-sm'
+                              : 'border border-red-600 font-mono text-red-600 hover:bg-red-600 hover:text-white'
+                          }`}
                         >
                           {isCancelling ? 'Cancelling…' : 'Confirm Cancel'}
                         </button>
                       </div>
 
                       {cancelError && (
-                        <p className="font-mono text-xs text-red-500">{cancelError}</p>
+                        <p className="font-mono text-sm text-red-500">{cancelError}</p>
                       )}
                     </form>
                   )}

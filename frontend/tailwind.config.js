@@ -3,6 +3,11 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        // Override Tailwind's default font-serif stack to lead with Playfair Display.
+        // All other themes still get the system serif fallback chain.
+        serif: ['"Playfair Display"', 'Georgia', 'Cambria', '"Times New Roman"', 'serif'],
+      },
       colors: {
         // Semantic palette — each value references the active CSS-variable theme.
         // Usage: bg-surface, text-primary, border-muted, bg-free, bg-accent, etc.

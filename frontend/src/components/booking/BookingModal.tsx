@@ -5,8 +5,9 @@ import { useSeatStore } from '../../store/seatStore';
 import { BookingForm } from './BookingForm';
 
 export function BookingModal() {
-  const { selectedSeat, isBookingModalOpen, closeModal } = useSeatStore();
+  const { selectedSeat, isBookingModalOpen, closeModal, currentTheme } = useSeatStore();
   const { submitBooking, isSubmitting } = useBooking();
+  const isPaper = currentTheme === 'paper';
 
   // Close on ESC key
   useEffect(() => {
@@ -25,7 +26,11 @@ export function BookingModal() {
       onClick={closeModal}
     >
       <div
-        className="bg-surface rounded-2xl shadow-2xl w-full max-w-4xl mx-4 p-6 relative"
+        className={`bg-surface w-full max-w-4xl mx-4 p-6 relative ${
+          isPaper
+            ? 'rounded-md border-2 border-stone-200 shadow-xl'
+            : 'rounded-2xl shadow-2xl'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -36,10 +41,23 @@ export function BookingModal() {
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-lg font-bold text-primary mb-1">Book Seat {selectedSeat.seatId}</h2>
-        <p className="text-sm text-secondary mb-5">
-          Click a start slot, then an end slot on the timeline below, then confirm your details.
-        </p>
+        {isPaper ? (
+          <>
+            <h2 className="font-serif text-2xl font-bold text-stone-800 mb-0.5">
+              Reserve Seat {selectedSeat.seatId}
+            </h2>
+            <p className="font-serif italic text-sm text-stone-500 mb-5">
+              Choose your time window on the timeline, then fill in your details below.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-lg font-bold text-primary mb-1">Book Seat {selectedSeat.seatId}</h2>
+            <p className="text-sm text-secondary mb-5">
+              Click a start slot, then an end slot on the timeline below, then confirm your details.
+            </p>
+          </>
+        )}
 
         <BookingForm
           seat={selectedSeat}

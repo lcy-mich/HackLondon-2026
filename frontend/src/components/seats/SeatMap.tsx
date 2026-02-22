@@ -68,6 +68,52 @@ export function SeatMap({ activeFilters }: SeatMapProps) {
         return activeFilters.every((f) => tags.includes(f));
       });
 
+  // ── Paper: Vintage Library Index Cards ────────────────────────────────────
+  if (currentTheme === 'paper') {
+    return (
+      <div>
+        <header className="mb-10">
+          <p className="text-xs font-serif italic text-stone-400 mb-1 tracking-wide">
+            University College London · Main Library
+          </p>
+          <h2 className="text-3xl font-serif font-bold text-stone-800 leading-tight">
+            Reading Room, Floor I
+          </h2>
+          <p className="text-xs font-mono tracking-[0.2em] uppercase text-stone-400 mt-1">
+            Select a seat to reserve your place
+          </p>
+        </header>
+
+        <div className="space-y-10">
+          {ZONES.map(({ key, label }) => {
+            const zoneSeats = visibleSeats.filter((s) => s.seatId.startsWith(key));
+            return (
+              <section key={key}>
+                {/* Archival chapter-label header */}
+                <div className="border-y-2 border-stone-300 py-2 mb-6">
+                  <h3 className="text-sm font-serif italic text-stone-600 tracking-wide">
+                    {label}
+                  </h3>
+                </div>
+                {/* Generous gap so each card reads as a discrete physical object */}
+                <div className="grid grid-cols-3 gap-8">
+                  {zoneSeats.map((seat) => (
+                    <SeatCard
+                      key={seat.seatId}
+                      seat={seat}
+                      isSelected={selectedSeat?.seatId === seat.seatId}
+                      onClick={() => selectSeat(seat)}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   // ── Japanese: Vertical Minimalist Stack ───────────────────────────────────
   if (currentTheme === 'japanese') {
     return (

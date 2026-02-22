@@ -93,6 +93,60 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
         .sort((a, b) => a.startSlot - b.startSlot)[0] ?? null)
     : null;
 
+  // ── Paper theme: Vintage Library Index Card ───────────────────────────────
+  if (currentTheme === 'paper') {
+    const stampText = physicalOnlyBlock ? 'IN USE' : 'RESERVED';
+
+    let stateClass: string;
+    if (isSelected) {
+      stateClass = 'ring-2 ring-amber-600 scale-105 shadow-lg cursor-pointer';
+    } else if (isUnavailable) {
+      stateClass = 'cursor-default';
+    } else {
+      stateClass = 'hover:shadow-lg hover:ring-1 hover:ring-amber-400 cursor-pointer transition-shadow';
+    }
+
+    return (
+      <button
+        className={`rounded-md border border-stone-300 shadow-md bg-[#FCFCFA] p-5 flex flex-col min-h-[8rem] relative overflow-hidden transition-all ${stateClass}`}
+        onClick={onClick}
+        aria-label={`Seat ${seat.seatId} — ${isUnavailable ? 'unavailable' : 'free'} during selected window`}
+      >
+        {/* Seat ID — large serif numeral */}
+        <span
+          className={`text-4xl font-serif leading-none tracking-tight select-none ${
+            isUnavailable ? 'text-stone-400' : 'text-stone-800'
+          }`}
+        >
+          {seat.seatId}
+        </span>
+
+        {/* Bottom metadata row */}
+        <div className="mt-auto">
+          {!isUnavailable && nextUpcomingSlot && (
+            <span className="text-xs font-mono text-stone-400 tracking-wide">
+              Next: {slotToLabel(nextUpcomingSlot.startSlot)}
+            </span>
+          )}
+          {!isUnavailable && !nextUpcomingSlot && (
+            <span className="text-xs font-mono text-stone-300 tracking-wide select-none">
+              free all day
+            </span>
+          )}
+        </div>
+
+        {/* Vintage rubber stamp overlay for any unavailable state */}
+        {isUnavailable && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="border-2 border-stone-400 text-stone-400 text-sm font-serif font-bold tracking-[0.25em] px-3 py-1 rotate-[-12deg] select-none uppercase">
+              {stampText}
+            </span>
+          </div>
+        )}
+      </button>
+    );
+  }
+
   // ── Japanese theme: sophisticated vertical-stack bar card ────────────────
   if (currentTheme === 'japanese') {
     let cardClass: string;
@@ -102,8 +156,8 @@ export function SeatCard({ seat, onClick, isSelected }: SeatCardProps) {
       cardClass = 'bg-white text-black cursor-pointer ring-2 ring-inset ring-[#334155]';
       cardStyle = undefined;
     } else if (physicalOnlyBlock) {
-      // Walk-in / physical occupancy — light grey, readable dark text
-      cardClass = 'bg-gray-200 text-black cursor-default';
+      // Walk-in / physical occupancy — mid grey, readable dark text
+      cardClass = 'bg-gray-300 text-black cursor-default';
       cardStyle = undefined;
     } else if (isUnavailable) {
       // Online reservation — dark crosshatch
