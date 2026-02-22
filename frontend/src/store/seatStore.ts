@@ -59,7 +59,17 @@ export const useSeatStore = create<SeatStore>((set) => ({
   selectedTimeRange: initialTimeRange(),
   currentTheme: 'academic',
 
-  setSeats: (seats) => set({ seats }),
+  setSeats: (seats) => set((state) => ({
+    seats,
+    // Keep selectedSeat in sync with the freshly-fetched seats array.
+    // Without this, the polling interval updates `seats` but leaves
+    // `selectedSeat` as a stale snapshot captured at click-time, causing the
+    // SeatTimeline inside BookingModal to render empty even though SeatCard
+    // (which reads from `seats`) correctly shows an upcoming booking.
+    selectedSeat: state.selectedSeat
+      ? (seats.find((s) => s.seatId === state.selectedSeat!.seatId) ?? state.selectedSeat)
+      : null,
+  })),
   selectSeat: (seat) => set({ selectedSeat: seat, isBookingModalOpen: true }),
   closeModal: () => set({ isBookingModalOpen: false, selectedSeat: null }),
   openManageModal: () => set({ isManageModalOpen: true }),
